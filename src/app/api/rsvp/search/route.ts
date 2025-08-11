@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "../../../../lib/prisma";
+import type { Guest } from "@prisma/client";
 
 // Common nickname map to bridge formal and short names
 const NICKNAMES: Record<string, string[]> = {
@@ -131,7 +132,17 @@ export async function GET(req: Request) {
       });
     }
 
-    const byKey = new Map<string, { id: string; name: string | null; guests: any[] }>();
+    type RSVPGuest = {
+      id: string;
+      title: string | null;
+      firstName: string;
+      lastName: string;
+      rsvpStatus: "PENDING" | "YES" | "NO";
+      foodSelection: string | null;
+      isChild: boolean;
+      dietaryRestrictions: string | null;
+    };
+    const byKey = new Map<string, { id: string; name: string | null; guests: RSVPGuest[] }>();
 
     for (const g of guests) {
       if (g.group) {
@@ -140,7 +151,7 @@ export async function GET(req: Request) {
           byKey.set(key, {
             id: g.group.id,
             name: g.group.name,
-            guests: g.group.guests.map((m: any) => ({
+            guests: (g.group.guests as Guest[]).map((m) => ({
               id: m.id,
               title: m.title,
               firstName: m.firstName,
@@ -166,8 +177,8 @@ export async function GET(req: Request) {
                 lastName: g.lastName,
                 rsvpStatus: g.rsvpStatus,
                 foodSelection: g.foodSelection,
-                isChild: (g as any).isChild,
-                dietaryRestrictions: (g as any).notesToCouple ?? null,
+                isChild: g.isChild,
+                dietaryRestrictions: g.notesToCouple ?? null,
               },
             ],
           });

@@ -45,7 +45,8 @@ export default function SeatingPlannerPage() {
       setGroups(groupsData.groups || []);
       setTableNicknames(tablesData.nicknames || {});
     } catch (e: any) {
-      setError(e.message || "Failed to load data");
+      if (e instanceof Error) setError(e.message || "Failed to load data");
+      else setError("Failed to load data");
     } finally {
       setLoading(false);
     }
@@ -91,7 +92,8 @@ export default function SeatingPlannerPage() {
       if (!res.ok) throw new Error(data.error || "Failed to assign seating");
       await loadGroups();
     } catch (e: any) {
-      alert(e.message || "Failed to assign seating");
+      if (e instanceof Error) alert(e.message || "Failed to assign seating");
+      else alert("Failed to assign seating");
     }
   };
 
@@ -110,7 +112,8 @@ export default function SeatingPlannerPage() {
       if (!res.ok) throw new Error(data.error || "Failed to assign seating");
       await loadGroups();
     } catch (e: any) {
-      alert(e.message || "Failed to assign seating");
+      if (e instanceof Error) alert(e.message || "Failed to assign seating");
+      else alert("Failed to assign seating");
     }
   };
 
@@ -146,7 +149,8 @@ export default function SeatingPlannerPage() {
       setSelectedMembers({});
       await loadGroups();
     } catch (e: any) {
-      alert(e.message || "Failed to assign");
+      if (e instanceof Error) alert(e.message || "Failed to assign");
+      else alert("Failed to assign");
     }
   };
   const removeSelected = async () => {
@@ -169,7 +173,8 @@ export default function SeatingPlannerPage() {
       setSelectedMembers({});
       await loadGroups();
     } catch (e: any) {
-      alert(e.message || "Failed to remove");
+      if (e instanceof Error) alert(e.message || "Failed to remove");
+      else alert("Failed to remove");
     }
   };
 
@@ -190,7 +195,8 @@ export default function SeatingPlannerPage() {
       // Update local map optimistically
       setTableNicknames((m) => ({ ...m, [selectedTable]: nickDraft.trim() || null }));
     } catch (e: any) {
-      alert(e.message || "Failed to save nickname");
+      if (e instanceof Error) alert(e.message || "Failed to save nickname");
+      else alert("Failed to save nickname");
     } finally {
       setSavingNickname(false);
     }

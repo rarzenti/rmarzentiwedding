@@ -7,14 +7,25 @@ import { useEffect, useState } from "react";
 
 
 // MobileNav component for hamburger menu
-function MobileNav({ links, adminLinks, adminMode, pathname, onLogout }: any) {
+interface NavLink {
+  href: string;
+  label: string;
+}
+interface MobileNavProps {
+  links: NavLink[];
+  adminLinks: NavLink[];
+  adminMode: boolean;
+  pathname: string | null;
+  onLogout: () => void;
+}
+function MobileNav({ links, adminLinks, adminMode, pathname, onLogout }: MobileNavProps) {
   const [open, setOpen] = useState(false);
   return (
     <>
       <button
         className="p-2 rounded focus:outline-none focus:ring-2 focus:ring-black/20"
         aria-label="Open menu"
-        onClick={() => setOpen((v: boolean) => !v)}
+        onClick={() => setOpen((v) => !v)}
       >
         <span className="block w-6 h-0.5 bg-gray-900 mb-1" />
         <span className="block w-6 h-0.5 bg-gray-900 mb-1" />
@@ -22,7 +33,7 @@ function MobileNav({ links, adminLinks, adminMode, pathname, onLogout }: any) {
       </button>
       {open && (
         <div className="absolute top-16 right-2 left-2 bg-white rounded-xl shadow-lg border z-50 p-4 flex flex-col gap-3 animate-fade-in">
-          {links.map((l: any) => {
+          {links.map((l) => {
             const active = pathname === l.href || pathname?.startsWith(l.href + "/");
             return (
               <Link
@@ -44,7 +55,7 @@ function MobileNav({ links, adminLinks, adminMode, pathname, onLogout }: any) {
           {adminMode && (
             <>
               <div className="border-t my-2" />
-              {adminLinks.map((l: any) => {
+              {adminLinks.map((l) => {
                 const active = pathname === l.href || pathname?.startsWith(l.href + "/");
                 return (
                   <Link

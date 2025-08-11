@@ -45,7 +45,7 @@ export default function RSVPPage() {
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Search failed");
         setResults(data.groups || []);
-      } catch (e: any) {
+      } catch (e) {
         setResults([]);
       } finally {
         setLoading(false);
@@ -100,7 +100,7 @@ export default function RSVPPage() {
             email: g.email ?? null,
           }),
         });
-        const data = await res.json();
+        const data: { error?: string } = await res.json();
         if (!res.ok) throw new Error(data.error || "Failed to save");
       }
       setSubmitted(true);

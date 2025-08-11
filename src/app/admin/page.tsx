@@ -48,8 +48,9 @@ export default function AdminDashboard() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to load groups");
       setGroups(data.groups || []);
-    } catch (e: any) {
-      setError(e.message || "Failed to load groups");
+    } catch (e) {
+      if (e instanceof Error) setError(e.message || "Failed to load groups");
+      else setError("Failed to load groups");
     } finally {
       setLoading(false);
     }
@@ -121,8 +122,9 @@ export default function AdminDashboard() {
       setGroups((prev) => [data.group, ...prev]);
       resetForm();
       setShowForm(false);
-    } catch (e: any) {
-      alert(e.message || "Failed to create group");
+    } catch (e) {
+      if (e instanceof Error) alert(e.message || "Failed to create group");
+      else alert("Failed to create group");
     }
   };
 
@@ -133,8 +135,9 @@ export default function AdminDashboard() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to delete");
       setGroups((prev) => prev.filter((g) => g.id !== id));
-    } catch (e: any) {
-      alert(e.message || "Failed to delete");
+    } catch (e) {
+      if (e instanceof Error) alert(e.message || "Failed to delete");
+      else alert("Failed to delete");
     }
   };
 
@@ -160,8 +163,9 @@ export default function AdminDashboard() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to rename group");
       setGroups((prev) => prev.map((g) => (g.id === groupId ? { ...g, name: data.group?.name ?? null } : g)));
-    } catch (e: any) {
-      alert(e.message || "Failed to rename group");
+    } catch (e) {
+      if (e instanceof Error) alert(e.message || "Failed to rename group");
+      else alert("Failed to rename group");
     }
   };
 
@@ -184,8 +188,9 @@ export default function AdminDashboard() {
         ...grp,
         guests: grp.guests.map((m) => (m.id === guestId ? { ...m, ...updated } : m)),
       })));
-    } catch (e: any) {
-      alert(e.message || "Failed to update guest");
+    } catch (e) {
+      if (e instanceof Error) alert(e.message || "Failed to update guest");
+      else alert("Failed to update guest");
     }
   };
 
@@ -200,8 +205,9 @@ export default function AdminDashboard() {
       if (!res.ok) throw new Error(data.error || "Failed to add guest");
       setGroups((prev) => prev.map((g) => (g.id === groupId ? { ...g, guests: [...g.guests, data.guest] } : g)));
       setShowAddForm((prev) => ({ ...prev, [groupId]: false }));
-    } catch (e: any) {
-      alert(e.message || "Failed to add guest");
+    } catch (e) {
+      if (e instanceof Error) alert(e.message || "Failed to add guest");
+      else alert("Failed to add guest");
     }
   };
 
@@ -212,8 +218,9 @@ export default function AdminDashboard() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to delete guest");
       setGroups((prev) => prev.map((g) => (g.id === groupId ? { ...g, guests: g.guests.filter((m) => m.id !== guestId) } : g)));
-    } catch (e: any) {
-      alert(e.message || "Failed to delete guest");
+    } catch (e) {
+      if (e instanceof Error) alert(e.message || "Failed to delete guest");
+      else alert("Failed to delete guest");
     }
   };
 
@@ -513,7 +520,7 @@ export default function AdminDashboard() {
                             <label className="block text-sm text-black mb-1">RSVP</label>
                             <select
                               value={m.rsvpStatus}
-                              onChange={(e) => updateGuest(m.id, { rsvpStatus: e.target.value as any })}
+                              onChange={(e) => updateGuest(m.id, { rsvpStatus: e.target.value as "PENDING" | "YES" | "NO" })}
                               className="w-full border rounded px-2 py-2 text-black"
                             >
                               <option value="PENDING">Pending</option>
