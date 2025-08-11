@@ -9,13 +9,21 @@ export default function AdminLoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
-  const onSubmit = (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // simple hardcoded login for now
-    if (email === "admin@wedding.com" && password === "letmein") {
+    setError("");
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Login failed");
+      if (typeof window !== "undefined") localStorage.setItem("admin", "1");
       router.push("/admin");
-    } else {
-      setError("Invalid credentials");
+    } catch (err: any) {
+      setError(err.message || "Login failed");
     }
   };
 

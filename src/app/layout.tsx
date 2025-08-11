@@ -51,7 +51,9 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} ${playfair.variable} ${cormorant.variable} ${dancing.variable} antialiased`}
       >
         <Navbar />
-        <div className="pt-16">{children}</div>
+        <div className="pt-16 min-h-screen bg-gradient-to-br from-rose-50 via-emerald-50 to-sky-50">
+          <div className="mx-auto w-full max-w-3xl px-2 sm:px-4 md:px-6 lg:px-8">{children}</div>
+        </div>
       </body>
     </html>
   );

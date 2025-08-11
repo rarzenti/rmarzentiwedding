@@ -10,14 +10,41 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum RsvpStatus {
+  PENDING
+  YES
+  NO
+}
+
+model Group {
+  id        String   @id @default(cuid())
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  guests    Guest[]
+}
+
 model Guest {
-  id          String   @id @default(cuid())
-  fullName    String
-  email       String?  @unique
-  phone       String?
-  attending   Boolean  @default(false)
-  guestsCount Int      @default(1)
-  notes       String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id             String     @id @default(cuid())
+  firstName      String
+  lastName       String
+  title          String?    // Honorific like "Mr.", "Ms.", "Mrs.", etc.
+  email          String?
+  phone          String?
+  tableNumber    Int?
+  rsvpStatus     RsvpStatus @default(PENDING)
+  foodSelection  String?
+  notesToCouple  String?
+  songRequests   String?
+  groupId        String?
+  group          Group?     @relation(fields: [groupId], references: [id])
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  isChild        Boolean    @default(false)
+}
+
+model Table {
+  id       String  @id @default(cuid())
+  number   Int     @unique
+  nickname String?
 }

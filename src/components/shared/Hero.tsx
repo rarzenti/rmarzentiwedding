@@ -32,10 +32,10 @@ interface CountdownItemProps {
 function CountdownItem({ value, label }: CountdownItemProps) {
   return (
     <div className="text-center">
-      <div className="font-playfair text-2xl md:text-3xl font-light text-gray-800">
+      <div className="font-playfair text-3xl md:text-4xl font-semibold text-gray-900">
         {value}
       </div>
-      <div className="font-cormorant text-sm text-gray-600 tracking-wider uppercase">
+      <div className="font-cormorant text-sm md:text-base text-gray-700 tracking-wide uppercase font-medium">
         {label}
       </div>
     </div>
