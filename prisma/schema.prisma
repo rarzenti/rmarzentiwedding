@@ -1,0 +1,23 @@
+// Prisma schema for wedding guest management
+// Using Vercel Postgres
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Guest {
+  id          String   @id @default(cuid())
+  fullName    String
+  email       String?  @unique
+  phone       String?
+  attending   Boolean  @default(false)
+  guestsCount Int      @default(1)
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
