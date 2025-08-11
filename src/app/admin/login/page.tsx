@@ -22,7 +22,7 @@ export default function AdminLoginPage() {
       if (!res.ok) throw new Error(data.error || "Login failed");
       if (typeof window !== "undefined") localStorage.setItem("admin", "1");
       router.push("/admin");
-    } catch (err: unknown) {
+    } catch (err) {
       if (err instanceof Error) setError(err.message || "Login failed");
       else setError("Login failed");
     }
