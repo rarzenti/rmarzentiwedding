@@ -59,7 +59,7 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json({ group: full }, { status: 201 });
-  } catch (err) {
+  } catch (err: unknown) {
     console.error("POST /api/groups error", err);
     return NextResponse.json({ error: "Failed to create group" }, { status: 500 });
   }

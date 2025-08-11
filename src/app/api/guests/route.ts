@@ -74,7 +74,7 @@ export async function PATCH(req: Request) {
       return NextResponse.json({ error: "id is required" }, { status: 400 });
     }
 
-    let groupConnect: { groupId?: string | null } = {};
+    const groupConnect: { groupId?: string | null } = {};
     if (typeof data.groupId === "string") {
       groupConnect.groupId = data.groupId;
     } else if (groupName) {

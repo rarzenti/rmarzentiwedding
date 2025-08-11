@@ -104,8 +104,9 @@ export default function RSVPPage() {
         if (!res.ok) throw new Error(data.error || "Failed to save");
       }
       setSubmitted(true);
-    } catch (e: any) {
-      setError(e.message || "Failed to save");
+    } catch (e: unknown) {
+      if (e instanceof Error) setError(e.message || "Failed to save");
+      else setError("Failed to save");
     } finally {
       setSubmitting(false);
     }

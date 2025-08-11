@@ -44,7 +44,7 @@ export default function SeatingPlannerPage() {
       if (!tablesRes.ok) throw new Error(tablesData.error || "Failed to load table names");
       setGroups(groupsData.groups || []);
       setTableNicknames(tablesData.nicknames || {});
-    } catch (e: any) {
+    } catch (e: unknown) {
       if (e instanceof Error) setError(e.message || "Failed to load data");
       else setError("Failed to load data");
     } finally {
@@ -91,7 +91,7 @@ export default function SeatingPlannerPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to assign seating");
       await loadGroups();
-    } catch (e: any) {
+    } catch (e: unknown) {
       if (e instanceof Error) alert(e.message || "Failed to assign seating");
       else alert("Failed to assign seating");
     }
@@ -111,7 +111,7 @@ export default function SeatingPlannerPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to assign seating");
       await loadGroups();
-    } catch (e: any) {
+    } catch (e: unknown) {
       if (e instanceof Error) alert(e.message || "Failed to assign seating");
       else alert("Failed to assign seating");
     }
@@ -148,7 +148,7 @@ export default function SeatingPlannerPage() {
       setSelectingGroup(null);
       setSelectedMembers({});
       await loadGroups();
-    } catch (e: any) {
+    } catch (e: unknown) {
       if (e instanceof Error) alert(e.message || "Failed to assign");
       else alert("Failed to assign");
     }
@@ -172,7 +172,7 @@ export default function SeatingPlannerPage() {
       setSelectingGroup(null);
       setSelectedMembers({});
       await loadGroups();
-    } catch (e: any) {
+    } catch (e: unknown) {
       if (e instanceof Error) alert(e.message || "Failed to remove");
       else alert("Failed to remove");
     }
@@ -194,7 +194,7 @@ export default function SeatingPlannerPage() {
       if (!res.ok) throw new Error(data.error || "Failed to save");
       // Update local map optimistically
       setTableNicknames((m) => ({ ...m, [selectedTable]: nickDraft.trim() || null }));
-    } catch (e: any) {
+    } catch (e: unknown) {
       if (e instanceof Error) alert(e.message || "Failed to save nickname");
       else alert("Failed to save nickname");
     } finally {
