@@ -47,18 +47,21 @@ const NICKNAMES: Record<string, string[]> = {
   andrew: ["drew", "andy"],
   drew: ["andrew", "andy"],
   andy: ["andrew", "drew"],
-  katherine: ["kate", "katie", "kathryn", "kathy", "kat"],
-  kate: ["katherine", "katie", "kathryn", "kathy", "kat"],
-  katie: ["katherine", "kate", "kathryn", "kathy", "kat"],
-  kathryn: ["katherine", "kate", "katie", "kathy", "kat"],
-  kathy: ["katherine", "kate", "katie", "kathryn", "kat"],
-  kat: ["katherine", "kate", "katie", "kathryn", "kathy"],
+  katherine: ["kate", "katie", "kathryn", "kathy", "kat", "kathleen"],
+  kate: ["katherine", "katie", "kathryn", "kathy", "kat", "kathleen"],
+  katie: ["katherine", "kate", "kathryn", "kathy", "kat", "kathleen"],
+  kathryn: ["katherine", "kate", "katie", "kathy", "kat", "kathleen"],
+  kathy: ["katherine", "kate", "katie", "kathryn", "kat", "kathleen"],
+  kat: ["katherine", "kate", "katie", "kathryn", "kathy", "kathleen"],
+  kathleen: ["kathy", "katherine", "kate", "katie", "kathryn", "kat"],
   mary: ["patty"],
   patty: ["mary"],
   lukas: ["luke"],
   luke: ["lukas"],
   mackenzie: ["kenz"],
-  kenz: ["mackenzie"]
+  kenz: ["mackenzie"],
+  enrico: ["rick"],
+  rick: ["enrico"]
 };
 
 function aliasSet(name: string) {
@@ -148,6 +151,7 @@ export async function GET(req: Request) {
       foodSelection: string | null;
       isChild: boolean;
       dietaryRestrictions: string | null;
+      tableNumber: number | null;
     };
     const byKey = new Map<string, { id: string; name: string | null; guests: RSVPGuest[] }>();
 
@@ -166,7 +170,8 @@ export async function GET(req: Request) {
               rsvpStatus: m.rsvpStatus,
               foodSelection: m.foodSelection,
               isChild: m.isChild,
-              dietaryRestrictions: m.dietaryRestrictions ?? null,
+              tableNumber: m.tableNumber,
+              dietaryRestrictions: (m as any).dietaryRestrictions ?? null,
             })),
           });
         }
@@ -185,7 +190,8 @@ export async function GET(req: Request) {
                 rsvpStatus: g.rsvpStatus,
                 foodSelection: g.foodSelection,
                 isChild: g.isChild,
-                dietaryRestrictions: g.dietaryRestrictions ?? null,
+                tableNumber: g.tableNumber,
+                dietaryRestrictions: (g as any).dietaryRestrictions ?? null,
               },
             ],
           });
