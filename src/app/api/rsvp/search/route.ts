@@ -1,6 +1,31 @@
 import { NextResponse } from "next/server";
 import { prisma } from "../../../../lib/prisma";
-import type { Guest } from "@prisma/client";
+import type { Guest, Group, RsvpStatus } from "@prisma/client";
+
+// Define the guest with all fields including dietaryRestrictions
+type ExtendedGuest = Guest & {
+  dietaryRestrictions: string | null;
+};
+
+// Define the guest with group relation type
+type GuestWithGroup = ExtendedGuest & {
+  group: (Group & {
+    guests: ExtendedGuest[];
+  }) | null;
+};
+
+// Define the response guest type
+type RSVPGuest = {
+  id: string;
+  title: string | null;
+  firstName: string;
+  lastName: string;
+  rsvpStatus: RsvpStatus;
+  foodSelection: string | null;
+  isChild: boolean;
+  dietaryRestrictions: string | null;
+  tableNumber: number | null;
+};
 
 // Common nickname map to bridge formal and short names
 const NICKNAMES: Record<string, string[]> = {
@@ -77,8 +102,6 @@ function aliasSet(name: string) {
   return Array.from(set);
 }
 
-// GET /api/rsvp/search?q=term
-// Returns unique groups for matching guests. For guests without a group, a virtual group is created per guest.
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const q = (searchParams.get("q") || "").trim();
@@ -87,7 +110,7 @@ export async function GET(req: Request) {
   try {
     const tokens = q.replace(/[.,]/g, " ").split(/\s+/).filter(Boolean);
 
-    let guests;
+    let guests: GuestWithGroup[];
     const include = {
       group: {
         include: { guests: true },
@@ -124,7 +147,7 @@ export async function GET(req: Request) {
         },
         include,
         take: 50,
-      });
+      }) as GuestWithGroup[];
     } else {
       // Single-term: broad search by first or last name contains + nickname aliases
       const aliases = aliasSet(q);
@@ -139,20 +162,9 @@ export async function GET(req: Request) {
         },
         include,
         take: 50,
-      });
+      }) as GuestWithGroup[];
     }
 
-    type RSVPGuest = {
-      id: string;
-      title: string | null;
-      firstName: string;
-      lastName: string;
-      rsvpStatus: "PENDING" | "YES" | "NO";
-      foodSelection: string | null;
-      isChild: boolean;
-      dietaryRestrictions: string | null;
-      tableNumber: number | null;
-    };
     const byKey = new Map<string, { id: string; name: string | null; guests: RSVPGuest[] }>();
 
     for (const g of guests) {
@@ -162,7 +174,7 @@ export async function GET(req: Request) {
           byKey.set(key, {
             id: g.group.id,
             name: g.group.name,
-            guests: (g.group.guests as Guest[]).map((m) => ({
+            guests: g.group.guests.map((m): RSVPGuest => ({
               id: m.id,
               title: m.title,
               firstName: m.firstName,
@@ -171,7 +183,7 @@ export async function GET(req: Request) {
               foodSelection: m.foodSelection,
               isChild: m.isChild,
               tableNumber: m.tableNumber,
-              dietaryRestrictions: (m as any).dietaryRestrictions ?? null,
+              dietaryRestrictions: (m as ExtendedGuest).dietaryRestrictions,
             })),
           });
         }
@@ -191,7 +203,7 @@ export async function GET(req: Request) {
                 foodSelection: g.foodSelection,
                 isChild: g.isChild,
                 tableNumber: g.tableNumber,
-                dietaryRestrictions: (g as any).dietaryRestrictions ?? null,
+                dietaryRestrictions: (g as ExtendedGuest).dietaryRestrictions,
               },
             ],
           });
