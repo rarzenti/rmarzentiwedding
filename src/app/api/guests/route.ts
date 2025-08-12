@@ -123,11 +123,16 @@ export async function POST(req: Request) {
           }
         }
 
-        await sendEmail({
-          to: created.email,
-          subject: "Your RSVP Confirmation",
-          html: message
-        });
+        // Only send email if API key is configured
+        if (process.env.RESEND_API_KEY) {
+          await sendEmail({
+            to: created.email,
+            subject: "Your RSVP Confirmation",
+            html: message
+          });
+        } else {
+          console.log("Email not sent - RESEND_API_KEY not configured");
+        }
       } catch (emailErr) {
         console.error("Failed to send confirmation email", emailErr);
       }
@@ -279,11 +284,16 @@ export async function PATCH(req: Request) {
               }
             }
           }
-          await sendEmail({
-            to: updated.email,
-            subject: "Your RSVP Confirmation",
-            html: message
-          });
+          // Only send email if API key is configured
+          if (process.env.RESEND_API_KEY) {
+            await sendEmail({
+              to: updated.email,
+              subject: "Your RSVP Confirmation",
+              html: message
+            });
+          } else {
+            console.log("Email not sent - RESEND_API_KEY not configured");
+          }
         }
       } catch (emailErr) {
         console.error("Failed to send confirmation email", emailErr);
