@@ -166,10 +166,10 @@ export default function Navbar() {
   return (
     <header className="fixed top-0 inset-x-0 z-50 bg-white/80 backdrop-blur border-b border-black/5">
       <nav className="w-full px-2 sm:px-4 md:px-8 h-16 flex items-center justify-between">
-        <Link href="/" className="font-dancing text-2xl sm:text-3xl md:text-4xl tracking-wide text-gray-900">
+        <Link href="/" className="font-dancing text-2xl sm:text-3xl md:text-4xl tracking-wide text-gray-900 whitespace-nowrap">
           Ryan & Marsha
         </Link>
-        <div className="hidden xl:flex items-center gap-6 xl:gap-8">
+        <div className="hidden xl:flex items-center gap-4">
           {links.map((l) => {
             const active = pathname === l.href || pathname?.startsWith(l.href + "/");
             return (
@@ -191,7 +191,7 @@ export default function Navbar() {
 
           {adminMode && (
             <>
-              <span className="mx-2 h-5 w-px bg-gray-300" aria-hidden="true" />
+              <span className="h-5 w-px bg-gray-300" aria-hidden="true" />
               {adminLinks.map((l) => {
                 const active = pathname === l.href || pathname?.startsWith(l.href + "/");
                 return (
@@ -212,7 +212,7 @@ export default function Navbar() {
               })}
               <button
                 onClick={handleLogout}
-                className="ml-2 rounded border px-3 py-1.5 text-[14px] text-gray-800 hover:bg-gray-900 hover:text-white"
+                className="rounded border px-3 py-1.5 text-[14px] text-gray-800 hover:bg-gray-900 hover:text-white"
                 title="Logout"
               >
                 Logout
