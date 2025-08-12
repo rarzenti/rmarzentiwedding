@@ -149,6 +149,8 @@ export default function Navbar() {
 
   const adminLinks = [
     { href: "/admin", label: "Guest Adder" },
+    { href: "/admin/guests", label: "Guest Data" },
+    { href: "/admin/allergies", label: "Food Allergies" },
     { href: "/admin/seating", label: "Seating Chart" },
   ];
 
@@ -167,7 +169,7 @@ export default function Navbar() {
         <Link href="/" className="font-dancing text-2xl sm:text-3xl md:text-4xl tracking-wide text-gray-900">
           Ryan & Marsha
         </Link>
-        <div className="hidden md:flex items-center gap-6 md:gap-8">
+        <div className="hidden xl:flex items-center gap-6 xl:gap-8">
           {links.map((l) => {
             const active = pathname === l.href || pathname?.startsWith(l.href + "/");
             return (
@@ -228,7 +230,7 @@ export default function Navbar() {
           )}
         </div>
         {/* Mobile nav */}
-        <div className="md:hidden flex items-center">
+        <div className="xl:hidden flex items-center">
           <MobileNav
             links={links}
             adminLinks={adminLinks}

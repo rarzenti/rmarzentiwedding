@@ -5,6 +5,7 @@ import Link from "next/link";
 import { PlusIcon, MinusIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { PencilIcon } from "@heroicons/react/24/outline";
 import { CheckCircleIcon, XCircleIcon, ClockIcon } from "@heroicons/react/24/solid";
+import { Bars3Icon } from "@heroicons/react/24/outline";
 
 interface MemberDraft {
   title?: string;
@@ -152,6 +153,11 @@ export default function AdminDashboard() {
   // Control visibility of inline Add Guest form per group
   const [showAddForm, setShowAddForm] = useState<Record<string, boolean>>({});
 
+  // Drag and drop state
+  const [draggedGuest, setDraggedGuest] = useState<string | null>(null);
+  const [draggedFromGroup, setDraggedFromGroup] = useState<string | null>(null);
+  const [dragOverGuest, setDragOverGuest] = useState<string | null>(null);
+
   const saveGroupName = async (groupId: string) => {
     const draft = (groupNameDraft[groupId] ?? "").trim();
     try {
@@ -224,22 +230,107 @@ export default function AdminDashboard() {
     }
   };
 
+  // Drag and drop handlers
+  const handleDragStart = (e: React.DragEvent, guestId: string, groupId: string) => {
+    setDraggedGuest(guestId);
+    setDraggedFromGroup(groupId);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", ""); // Required for Firefox
+    
+    // Create a custom drag image that's more subtle
+    const dragElement = e.currentTarget as HTMLElement;
+    const rect = dragElement.getBoundingClientRect();
+    e.dataTransfer.setDragImage(dragElement, rect.width / 2, rect.height / 2);
+  };
+
+  const handleDragOver = (e: React.DragEvent, guestId: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    
+    // Only set drag over if we're dragging something and it's not the same item
+    if (draggedGuest && draggedGuest !== guestId) {
+      setDragOverGuest(guestId);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    // Only clear drag over if we're leaving the container entirely
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const x = e.clientX;
+    const y = e.clientY;
+    
+    if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
+      setDragOverGuest(null);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent, targetGuestId: string, targetGroupId: string) => {
+    e.preventDefault();
+    
+    if (!draggedGuest || !draggedFromGroup) return;
+    
+    // Clear drag state
+    setDragOverGuest(null);
+    
+    // Don't do anything if dropped on itself
+    if (draggedGuest === targetGuestId) {
+      setDraggedGuest(null);
+      setDraggedFromGroup(null);
+      return;
+    }
+
+    // Reorder within the same group
+    if (draggedFromGroup === targetGroupId) {
+      setGroups((prev) => prev.map((group) => {
+        if (group.id !== targetGroupId) return group;
+        
+        const guests = [...group.guests];
+        const draggedIndex = guests.findIndex(g => g.id === draggedGuest);
+        const targetIndex = guests.findIndex(g => g.id === targetGuestId);
+        
+        if (draggedIndex === -1 || targetIndex === -1) return group;
+        
+        // Remove dragged item and insert at target position
+        const [draggedItem] = guests.splice(draggedIndex, 1);
+        guests.splice(targetIndex, 0, draggedItem);
+        
+        return { ...group, guests };
+      }));
+    }
+    
+    setDraggedGuest(null);
+    setDraggedFromGroup(null);
+  };
+
+  const handleDragEnd = () => {
+    // Clean up all drag state
+    setDraggedGuest(null);
+    setDraggedFromGroup(null);
+    setDragOverGuest(null);
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-rose-100 via-emerald-100 to-sky-100">
-      <main className="mx-auto max-w-5xl p-6 mt-24">
+    <div>
+      {/* Header section can have some padding for readability */}
+      <div className="px-6 pt-24 pb-6">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="font-playfair text-3xl">Guest Entries</h1>
-          <div className="flex gap-2">
-            <Link href="/admin/seating" className="px-4 py-2 border rounded hover:bg-gray-50">Seating Planner</Link>
-            {!showForm ? (
-              <button onClick={() => setShowForm(true)} className="px-4 py-2 bg-black text-white rounded flex items-center gap-2">
-                <PlusIcon className="h-4 w-4" /> Add Entry
-              </button>
-            ) : (
-              <button onClick={() => { resetForm(); setShowForm(false); }} className="px-4 py-2 border rounded">Cancel</button>
-            )}
-          </div>
+   
         </div>
+      </div>
+      
+      {/* Main content area - 60% OF TOTAL SCREEN WIDTH */}
+      <main 
+        className="px-6"
+        style={{
+          width: '60vw',
+          maxWidth: '60vw',
+          marginLeft: 'auto',
+          marginRight: 'auto',
+          position: 'relative',
+          left: '50%',
+          transform: 'translateX(-50%)'
+        }}
+      >
 
         {/* Dashboard summary */}
         <section className="mb-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -273,26 +364,45 @@ export default function AdminDashboard() {
           ))}
         </section>
 
-        {/* Add Entry form */}
+        {/* Add Entry Button */}
+        <section className="mb-8 text-center">
+          {!showForm ? (
+            <button 
+              onClick={() => setShowForm(true)} 
+              className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg flex items-center gap-2 mx-auto shadow-lg transition-colors"
+            >
+              <PlusIcon className="h-5 w-5" /> Add New Entry
+            </button>
+          ) : (
+            <button 
+              onClick={() => { resetForm(); setShowForm(false); }} 
+              className="px-6 py-3 border border-gray-400 bg-white text-gray-700 rounded-lg hover:bg-gray-100 hover:border-gray-500 transition-colors shadow-sm"
+            >
+              Cancel
+            </button>
+          )}
+        </section>
+
+        {/* Add Entry form - simplified styling */}
         {showForm && (
-          <section className="mb-8 border-2 border-emerald-300 rounded-xl bg-white/90 backdrop-blur-sm p-4 shadow-sm text-black">
-            <h2 className="font-playfair text-xl mb-3">New Entry</h2>
-            <label className="block text-sm mb-1 text-black">Group Name</label>
+          <section className="mb-8 bg-white rounded-lg border p-6 shadow-sm">
+            <h2 className="font-playfair text-xl mb-4 text-gray-900">New Entry</h2>
+            <label className="block text-sm mb-2 text-gray-700 font-medium">Group Name</label>
             <input
               value={groupName}
               onChange={(e) => setGroupName(e.target.value)}
               placeholder="e.g., Matt and Lauren Arzenti"
-              className="w-full border rounded px-3 py-2 mb-4 text-black placeholder-black"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 mb-4 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-gray-900 placeholder-gray-500"
             />
             <div className="space-y-3">
               {members.map((m, idx) => (
                 <div key={idx} className="grid grid-cols-12 gap-2 items-end">
                   <div className="col-span-2">
-                    <label className="block text-sm mb-1 text-black">Title</label>
+                    <label className="block text-sm mb-1 text-gray-700 font-medium">Title</label>
                     <select
                       value={m.title ?? ""}
                       onChange={(e) => updateMember(idx, { title: e.target.value })}
-                      className="w-full border rounded px-3 py-2 text-black"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-gray-900"
                     >
                       <option value="">—</option>
                       <option>Mr.</option>
@@ -303,45 +413,45 @@ export default function AdminDashboard() {
                       <option>Prof.</option>
                       <option>Mx.</option>
                     </select>
-                    <label className="mt-2 inline-flex items-center gap-2 text-sm text-black">
+                    <label className="mt-2 inline-flex items-center gap-2 text-sm text-gray-700">
                       <input type="checkbox" checked={!!m.isChild} onChange={(e) => updateMember(idx, { isChild: e.target.checked })} />
                       Child
                     </label>
                   </div>
                   <div className="col-span-4">
-                    <label className="block text-sm mb-1 text-black">First Name</label>
+                    <label className="block text-sm mb-1 text-gray-700 font-medium">First Name</label>
                     <input
                       value={m.firstName}
                       onChange={(e) => updateMember(idx, { firstName: e.target.value })}
-                      className="w-full border rounded px-3 py-2 text-black placeholder-black"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-gray-900 placeholder-gray-500"
                       placeholder="First name"
                     />
                   </div>
                   <div className="col-span-4">
-                    <label className="block text-sm mb-1 text-black">Last Name</label>
+                    <label className="block text-sm mb-1 text-gray-700 font-medium">Last Name</label>
                     <input
                       value={m.lastName}
                       onChange={(e) => updateMember(idx, { lastName: e.target.value })}
-                      className="w-full border rounded px-3 py-2 text-black placeholder-black"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-gray-900 placeholder-gray-500"
                       placeholder="Last name"
                     />
                   </div>
                   <div className="col-span-2">
-                    <label className="block text-sm mb-1 text-black">Table</label>
+                    <label className="block text-sm mb-1 text-gray-700 font-medium">Table</label>
                     <input
                       type="number"
                       min={1}
                       value={m.tableNumber ?? ""}
                       onChange={(e) => updateMember(idx, { tableNumber: e.target.value === "" ? "" : Number(e.target.value) })}
-                      className="w-full border rounded px-3 py-2 text-black placeholder-black"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-gray-900 placeholder-gray-500"
                       placeholder="#"
                     />
                   </div>
                   <div className="col-span-12 flex justify-end gap-2">
-                    <button type="button" onClick={() => addMemberRow()} className="text-sm px-3 py-2 border rounded flex items-center gap-1">
+                    <button type="button" onClick={() => addMemberRow()} className="text-sm px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md flex items-center gap-1 transition-colors shadow-sm">
                       <PlusIcon className="h-4 w-4" /> Add Guest
                     </button>
-                    <button type="button" onClick={() => removeMemberRow(idx)} disabled={members.length === 1} className="text-sm px-3 py-2 border rounded flex items-center gap-1 disabled:opacity-50">
+                    <button type="button" onClick={() => removeMemberRow(idx)} disabled={members.length === 1} className="text-sm px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md flex items-center gap-1 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors shadow-sm">
                       <MinusIcon className="h-4 w-4" /> Remove
                     </button>
                   </div>
@@ -349,8 +459,8 @@ export default function AdminDashboard() {
               ))}
             </div>
             <div className="mt-4 flex justify-end gap-2">
-              <button onClick={() => { resetForm(); setShowForm(false); }} className="px-4 py-2 border rounded">Cancel</button>
-              <button onClick={submitGroup} className="px-4 py-2 bg-black text-white rounded">Save Entry</button>
+              <button onClick={() => { resetForm(); setShowForm(false); }} className="px-4 py-2 border border-gray-400 bg-white text-gray-700 rounded-md hover:bg-gray-100 hover:border-gray-500 transition-colors shadow-sm">Cancel</button>
+              <button onClick={submitGroup} className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md transition-colors">Save Entry</button>
             </div>
           </section>
         )}
@@ -374,13 +484,17 @@ export default function AdminDashboard() {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => setExpanded((e) => ({ ...e, [g.id]: !e[g.id] }))}
-                      className="px-3 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 flex items-center gap-2"
+                      className="p-2 rounded border border-blue-600 bg-white text-blue-600 hover:bg-blue-600 hover:text-white transition-colors"
+                      title={expanded[g.id] ? "Hide" : "Manage"}
                     >
                       <PencilIcon className="h-4 w-4" />
-                      {expanded[g.id] ? "Hide" : "Manage"}
                     </button>
-                    <button onClick={() => deleteGroup(g.id)} className="px-3 py-2 border border-red-600 text-red-700 rounded flex items-center gap-2 hover:bg-red-50 hover:text-red-800">
-                      <TrashIcon className="h-4 w-4" /> Remove Entry
+                    <button 
+                      onClick={() => deleteGroup(g.id)} 
+                      className="p-2 rounded border border-red-600 bg-white text-red-600 hover:bg-red-600 hover:text-white transition-colors"
+                      title="Remove Entry"
+                    >
+                      <TrashIcon className="h-4 w-4" />
                     </button>
                   </div>
                 </div>
@@ -433,7 +547,7 @@ export default function AdminDashboard() {
                             <button
                               type="button"
                               onClick={() => setShowAddForm((p) => ({ ...p, [g.id]: false }))}
-                              className="px-3 py-2 rounded border border-red-600 text-red-700 hover:bg-red-50"
+                              className="px-3 py-2 rounded border border-gray-400 bg-white text-gray-700 hover:bg-gray-100 hover:border-gray-500 transition-colors shadow-sm"
                             >
                               Cancel
                             </button>
@@ -444,9 +558,25 @@ export default function AdminDashboard() {
 
                     {/* Guests editor */}
                     {g.guests.map((m) => (
-                      <div key={m.id} className="rounded border bg-white p-3">
+                      <div 
+                        key={m.id} 
+                        className={`rounded border bg-white p-3 transition-all duration-200 ${
+                          draggedGuest === m.id ? 'opacity-30 scale-95 rotate-2' : ''
+                        } ${
+                          dragOverGuest === m.id ? 'ring-2 ring-blue-500 ring-opacity-50 bg-blue-50' : ''
+                        }`}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, m.id, g.id)}
+                        onDragOver={(e) => handleDragOver(e, m.id)}
+                        onDragLeave={handleDragLeave}
+                        onDrop={(e) => handleDrop(e, m.id, g.id)}
+                        onDragEnd={handleDragEnd}
+                      >
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center gap-2">
+                            <Bars3Icon className={`h-4 w-4 transition-colors ${
+                              draggedGuest === m.id ? 'text-blue-500' : 'text-gray-400 hover:text-gray-600'
+                            } cursor-grab active:cursor-grabbing`} title="Drag to reorder" />
                             {m.rsvpStatus === "YES" ? (
                               <CheckCircleIcon className="h-5 w-5 text-green-600" />
                             ) : m.rsvpStatus === "NO" ? (
@@ -469,86 +599,97 @@ export default function AdminDashboard() {
                             )}
                           </div>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-6 gap-3 items-end">
-                          <div>
-                            <label className="block text-sm text-black mb-1">Title</label>
-                            <select
-                              value={m.title ?? ""}
-                              onChange={(e) => updateGuest(m.id, { title: e.target.value || null })}
-                              className="w-full border rounded px-2 py-2 text-black"
-                            >
-                              <option value="">—</option>
-                              <option>Mr.</option>
-                              <option>Mrs.</option>
-                              <option>Ms.</option>
-                              <option>Miss</option>
-                              <option>Dr.</option>
-                              <option>Prof.</option>
-                              <option>Mx.</option>
-                            </select>
-                            <label className="mt-2 inline-flex items-center gap-2 text-sm text-black">
-                              <input type="checkbox" checked={!!m.isChild} onChange={(e) => updateGuest(m.id, { isChild: e.target.checked })} />
+                        <div className="relative">
+                          <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
+                            <div className="flex flex-col">
+                              <label className="block text-sm text-black mb-1">Title</label>
+                              <select
+                                value={m.title ?? ""}
+                                onChange={(e) => updateGuest(m.id, { title: e.target.value || null })}
+                                className="w-full border rounded px-3 py-2 text-black h-10"
+                              >
+                                <option value="">—</option>
+                                <option>Mr.</option>
+                                <option>Mrs.</option>
+                                <option>Ms.</option>
+                                <option>Miss</option>
+                                <option>Dr.</option>
+                                <option>Prof.</option>
+                                <option>Mx.</option>
+                              </select>
+                            </div>
+                            <div className="flex flex-col">
+                              <label className="block text-sm text-black mb-1">First Name</label>
+                              <input
+                                value={m.firstName}
+                                onChange={(e) => updateGuest(m.id, { firstName: e.target.value })}
+                                className="w-full border rounded px-3 py-2 text-black h-10"
+                              />
+                            </div>
+                            <div className="flex flex-col">
+                              <label className="block text-sm text-black mb-1">Last Name</label>
+                              <input
+                                value={m.lastName}
+                                onChange={(e) => updateGuest(m.id, { lastName: e.target.value })}
+                                className="w-full border rounded px-3 py-2 text-black h-10"
+                              />
+                            </div>
+                            <div className="flex flex-col">
+                              <label className="block text-sm text-black mb-1">Table</label>
+                              <input
+                                type="number"
+                                value={m.tableNumber ?? ""}
+                                onChange={(e) => updateGuest(m.id, { tableNumber: e.target.value === "" ? null : Number(e.target.value) })}
+                                className="w-full border rounded px-3 py-2 text-black h-10"
+                              />
+                            </div>
+                            <div className="flex flex-col">
+                              <label className="block text-sm text-black mb-1">RSVP</label>
+                              <select
+                                value={m.rsvpStatus}
+                                onChange={(e) => updateGuest(m.id, { rsvpStatus: e.target.value as "PENDING" | "YES" | "NO" })}
+                                className="w-full border rounded px-3 py-2 text-black h-10"
+                              >
+                                <option value="PENDING">Pending</option>
+                                <option value="YES">Yes</option>
+                                <option value="NO">No</option>
+                              </select>
+                            </div>
+                            <div className="flex flex-col">
+                              <label className="block text-sm text-black mb-1">Dinner</label>
+                              <select
+                                value={m.foodSelection ?? ""}
+                                onChange={(e) => updateGuest(m.id, { foodSelection: e.target.value || null })}
+                                className="w-full border rounded px-3 py-2 text-black h-10"
+                              >
+                                <option value="">Select</option>
+                                <option value="Chicken">Chicken</option>
+                                <option value="Beef">Beef</option>
+                                <option value="Fish">Fish</option>
+                                <option value="Vegetarian">Vegetarian</option>
+                              </select>
+                            </div>
+                          </div>
+                          {/* Child checkbox positioned at the very bottom */}
+                          <div className="absolute -bottom-8 left-0">
+                            <label className="inline-flex items-center gap-2 text-sm text-black">
+                              <input 
+                                type="checkbox" 
+                                checked={!!m.isChild} 
+                                onChange={(e) => updateGuest(m.id, { isChild: e.target.checked })}
+                                className="rounded border-gray-300"
+                              />
                               Child
                             </label>
                           </div>
-                          <div>
-                            <label className="block text-sm text-black mb-1">First Name</label>
-                            <input
-                              value={m.firstName}
-                              onChange={(e) => updateGuest(m.id, { firstName: e.target.value })}
-                              className="w-full border rounded px-2 py-2 text-black"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm text-black mb-1">Last Name</label>
-                            <input
-                              value={m.lastName}
-                              onChange={(e) => updateGuest(m.id, { lastName: e.target.value })}
-                              className="w-full border rounded px-2 py-2 text-black"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm text-black mb-1">Table</label>
-                            <input
-                              type="number"
-                              value={m.tableNumber ?? ""}
-                              onChange={(e) => updateGuest(m.id, { tableNumber: e.target.value === "" ? null : Number(e.target.value) })}
-                              className="w-full border rounded px-2 py-2 text-black"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm text-black mb-1">RSVP</label>
-                            <select
-                              value={m.rsvpStatus}
-                              onChange={(e) => updateGuest(m.id, { rsvpStatus: e.target.value as "PENDING" | "YES" | "NO" })}
-                              className="w-full border rounded px-2 py-2 text-black"
-                            >
-                              <option value="PENDING">Pending</option>
-                              <option value="YES">Yes</option>
-                              <option value="NO">No</option>
-                            </select>
-                          </div>
-                          <div>
-                            <label className="block text-sm text-black mb-1">Dinner</label>
-                            <select
-                              value={m.foodSelection ?? ""}
-                              onChange={(e) => updateGuest(m.id, { foodSelection: e.target.value || null })}
-                              className="w-full border rounded px-2 py-2 text-black"
-                            >
-                              <option value="">Select</option>
-                              <option value="Chicken">Chicken</option>
-                              <option value="Beef">Beef</option>
-                              <option value="Fish">Fish</option>
-                              <option value="Vegetarian">Vegetarian</option>
-                            </select>
-                          </div>
                         </div>
-                        <div className="mt-3 flex justify-end">
+                        <div className="mt-12 flex justify-end">
                           <button
                             onClick={() => deleteGuest(g.id, m.id)}
-                            className="px-3 py-2 border border-red-600 text-red-700 rounded hover:bg-red-50"
+                            className="p-2 rounded border border-red-600 bg-white text-red-600 hover:bg-red-600 hover:text-white transition-colors"
+                            title="Remove from Group"
                           >
-                            Remove from Group
+                            <TrashIcon className="h-4 w-4" />
                           </button>
                         </div>
                       </div>

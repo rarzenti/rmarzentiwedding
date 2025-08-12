@@ -25,26 +25,37 @@ model Group {
 }
 
 model Guest {
-  id             String     @id @default(cuid())
-  firstName      String
-  lastName       String
-  title          String?    // Honorific like "Mr.", "Ms.", "Mrs.", etc.
-  email          String?
-  phone          String?
-  tableNumber    Int?
-  rsvpStatus     RsvpStatus @default(PENDING)
-  foodSelection  String?
-  notesToCouple  String?
-  songRequests   String?
-  groupId        String?
-  group          Group?     @relation(fields: [groupId], references: [id])
-  createdAt      DateTime   @default(now())
-  updatedAt      DateTime   @updatedAt
-  isChild        Boolean    @default(false)
+  id                  String     @id @default(cuid())
+  firstName           String
+  lastName            String
+  title               String?    // Honorific like "Mr.", "Ms.", "Mrs.", etc.
+  email               String?
+  phone               String?
+  tableNumber         Int?
+  rsvpStatus          RsvpStatus @default(PENDING)
+  foodSelection       String?
+  dietaryRestrictions String?
+  songRequests        String?
+  groupId             String?
+  group               Group?     @relation(fields: [groupId], references: [id])
+  nicknames           Nickname[]
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+  isChild             Boolean    @default(false)
 }
 
 model Table {
   id       String  @id @default(cuid())
   number   Int     @unique
   nickname String?
+}
+
+model Nickname {
+  id        String  @id @default(cuid())
+  nickname  String
+  guestId   String
+  guest     Guest   @relation(fields: [guestId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([nickname, guestId])
 }

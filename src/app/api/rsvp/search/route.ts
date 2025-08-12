@@ -54,7 +54,11 @@ const NICKNAMES: Record<string, string[]> = {
   kathy: ["katherine", "kate", "katie", "kathryn", "kat"],
   kat: ["katherine", "kate", "katie", "kathryn", "kathy"],
   mary: ["patty"],
-  patty: ["mary"]
+  patty: ["mary"],
+  lukas: ["luke"],
+  luke: ["lukas"],
+  mackenzie: ["kenz"],
+  kenz: ["mackenzie"]
 };
 
 function aliasSet(name: string) {
@@ -119,11 +123,14 @@ export async function GET(req: Request) {
         take: 50,
       });
     } else {
-      // Single-term: broad search by first or last name contains
+      // Single-term: broad search by first or last name contains + nickname aliases
+      const aliases = aliasSet(q);
+      
       guests = await prisma.guest.findMany({
         where: {
           OR: [
             { firstName: { contains: q, mode: "insensitive" } },
+            ...aliases.map((alias) => ({ firstName: { equals: alias, mode: "insensitive" as const } })),
             { lastName: { contains: q, mode: "insensitive" } },
           ],
         },
@@ -159,7 +166,7 @@ export async function GET(req: Request) {
               rsvpStatus: m.rsvpStatus,
               foodSelection: m.foodSelection,
               isChild: m.isChild,
-              dietaryRestrictions: m.notesToCouple ?? null,
+              dietaryRestrictions: m.dietaryRestrictions ?? null,
             })),
           });
         }
@@ -178,7 +185,7 @@ export async function GET(req: Request) {
                 rsvpStatus: g.rsvpStatus,
                 foodSelection: g.foodSelection,
                 isChild: g.isChild,
-                dietaryRestrictions: g.notesToCouple ?? null,
+                dietaryRestrictions: g.dietaryRestrictions ?? null,
               },
             ],
           });

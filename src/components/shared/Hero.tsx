@@ -92,9 +92,9 @@ export default function Hero() {
 
   return (
     <div className="relative w-full min-h-screen flex flex-col justify-end">
-      <div className="relative w-full flex-1 bg-gray-100 rounded-lg overflow-hidden shadow-xl flex flex-col">
+      <div className="fixed inset-0 w-full h-full flex flex-col z-0">
         {/* Image Slides */}
-        <div className="relative w-full flex-1">
+        <div className="relative w-full h-full flex-1 aspect-[3/4] md:aspect-auto">
           {images.map((image, index) => (
             <div
               key={image.src}
@@ -107,9 +107,9 @@ export default function Hero() {
                 alt={image.alt}
                 fill
                 priority={index === currentSlide || index === (currentSlide + 1) % images.length}
-                className={`object-cover ${image.src === '/images/psuWedding.JPG' ? 'object-[center_30%]' : image.src === '/images/nyc.JPG' ? 'object-[center_15%]' : image.src === '/images/MR-Engagement-18.jpg' ? 'object-[center_40%]' : image.src === '/images/hiking.JPG' ? 'object-[center_50%]' : image.src === '/images/nycWedding.JPG' ? 'object-[center_10%]' : 'object-center'}`}
+                className={`object-cover ${image.src === '/images/psuWedding.JPG' ? 'object-[center_30%]' : image.src === '/images/nyc.JPG' ? 'object-[center_15%]' : image.src === '/images/MR-Engagement-18.jpg' ? 'object-[center_40%]' : image.src === '/images/hiking.JPG' ? 'object-[25%_center] md:object-[center_15%]' : image.src === '/images/nycWedding.JPG' ? 'object-[center_10%]' : 'object-center'}`}
                 quality={95}
-                sizes="(max-width: 768px) 100vw, 90vw"
+                sizes="100vw"
               />
               <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/50" />
             </div>
@@ -148,7 +148,7 @@ export default function Hero() {
           </div>
 
           {/* Title Overlay */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center w-full px-4 z-30">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center w-full px-4 z-30 pointer-events-none">
             <div className="space-y-4">
               <span className="block font-cormorant text-lg md:text-xl text-white tracking-[0.2em] uppercase drop-shadow-lg">
                 The Wedding Of
@@ -166,7 +166,7 @@ export default function Hero() {
         </div>
 
         {/* Countdown */}
-        <div className="w-full flex justify-center bg-white/90 backdrop-blur-md px-8 py-6 rounded-b-lg shadow-xl z-40">
+        <div className="absolute bottom-0 left-0 w-full flex justify-center bg-white/90 backdrop-blur-md px-8 py-6 z-40">
           <div className="grid grid-cols-4 gap-8 md:gap-12">
             <CountdownItem value={timeLeft.days} label="Days" />
             <CountdownItem value={timeLeft.hours} label="Hours" />
