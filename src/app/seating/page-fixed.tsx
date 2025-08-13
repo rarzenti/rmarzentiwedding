@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import Link from 'next/link';
 
 interface GroupItem {
   id: string;
@@ -188,17 +189,11 @@ function ZoomableFloorPlan({
 }
 
 export default function GuestSeatingPage() {
-  // Date restriction: Only allow access after May 15, 2026 at 11:59 PM
-  const WEDDING_DAY_ACCESS = new Date("2025-05-15T23:59:00");
+  // Date restriction: Only allow access after May 15, 2026 at 11:59 PM (UTC)
+  const WEDDING_DAY_ACCESS = new Date("2026-05-15T23:59:00Z");
   const isSeatingAvailable = new Date() >= WEDDING_DAY_ACCESS;
 
-  const [groups, setGroups] = useState<GroupItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [floorLayoutLoading, setFloorLayoutLoading] = useState(true);
-  const CAPACITY = 10;
-
-  // Early return if seating chart is not yet available
+  // Gate BEFORE any hooks to avoid conditional hooks rule
   if (!isSeatingAvailable) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-rose-50 to-pink-50 flex items-center justify-center p-4">
@@ -210,32 +205,34 @@ export default function GuestSeatingPage() {
               </svg>
             </div>
             <h1 className="text-2xl font-bold text-gray-900 mb-2">Seating Chart Coming Soon</h1>
-            <p className="text-gray-600 mb-4">
-              The seating chart will be available on the day of the wedding.
-            </p>
-            <p className="text-sm text-gray-500">
-              Access begins: <br />
-              <span className="font-semibold text-rose-600">May 15, 2026 at 11:59 PM</span>
-            </p>
+            <p className="text-gray-600 mb-4">The seating chart will be available on the day of the wedding.</p>
+            <p className="text-sm text-gray-500">Access begins: <br /><span className="font-semibold text-rose-600">May 15, 2026 at 11:59 PM</span></p>
           </div>
           <div className="space-y-3">
-            <a 
+            <Link 
               href="/"
               className="block w-full bg-rose-600 text-white py-3 px-4 rounded-lg hover:bg-rose-700 transition-colors font-medium"
             >
               Return to Home
-            </a>
-            <a 
+            </Link>
+            <Link 
               href="/rsvp"
               className="block w-full bg-gray-100 text-gray-700 py-3 px-4 rounded-lg hover:bg-gray-200 transition-colors font-medium"
             >
               Complete RSVP
-            </a>
+            </Link>
           </div>
         </div>
       </div>
     );
   }
+
+  // Hooks (only run when seating is available)
+  const [groups, setGroups] = useState<GroupItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [floorLayoutLoading, setFloorLayoutLoading] = useState(true);
+  const CAPACITY = 10;
 
   const [tableNicknames, setTableNicknames] = useState<Record<number, string | null>>({});
   const [viewMode, setViewMode] = useState<"list" | "floor">("floor");
