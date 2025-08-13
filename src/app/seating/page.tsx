@@ -2,6 +2,20 @@
 
 import { useState, useEffect, useRef, useMemo } from "react";
 
+// Custom hook for mobile detection
+const useIsMobile = () => {
+  const [isMobile, setIsMobile] = useState(false);
+  
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+  
+  return isMobile;
+};
+
 interface GroupItem {
   id: string;
   name?: string | null;
@@ -14,6 +28,8 @@ interface GroupItem {
 }
 
 export default function GuestSeatingPage() {
+  const isMobile = useIsMobile();
+  
   const [groups, setGroups] = useState<GroupItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -486,27 +502,29 @@ function SVGFloorPlan({
   const leftAngles = Array.from({ length: 10 }, (_, i) => 110 + (140 * i) / 9);
   const rightAngles = Array.from({ length: 10 }, (_, i) => -70 + (140 * i) / 9);
 
-  // Default positions
-  const defaultPositions: { n: number; x: number; y: number }[] = [];
-  for (let i = 0; i < 10; i++) {
-    const a = deg2rad(leftAngles[i]);
-    defaultPositions.push({ n: i + 1, x: cx + Math.cos(a) * r, y: cy + Math.sin(a) * r });
-  }
-  for (let i = 0; i < 10; i++) {
-    const a = deg2rad(rightAngles[i]);
-    defaultPositions.push({ n: 11 + i, x: cx + Math.cos(a) * r, y: cy + Math.sin(a) * r });
-  }
 
-  // Get actual positions (custom or default)
-  const positions = defaultPositions.map(({ n, x, y }) => ({
-    n,
-    x: tablePositions[n]?.x ?? x,
-    y: tablePositions[n]?.y ?? y,
-  }));
+  // Only use admin's saved layout (normalized positions from /api/floor-layout)
+  // If no layout is present, do not render tables (show error or fallback message)
+  const positions: { n: number; x: number; y: number }[] = useMemo(() => {
+    if (!tablePositions || Object.keys(tablePositions).length === 0) return [];
+    // There are always 20 tables, numbered 1-20
+    return Array.from({ length: 20 }, (_, i) => {
+      const n = i + 1;
+      const pos = tablePositions[n];
+      if (!pos) return null;
+      // Denormalize to SVG coordinates (assume width/height are defined above)
+      return {
+        n,
+        x: pos.x * width,
+        y: pos.y * height,
+      };
+    }).filter(Boolean) as { n: number; x: number; y: number }[];
+  }, [tablePositions, width, height]);
 
-  // Debug: Check if we have any custom positions
-  const hasCustomPositions = Object.keys(tablePositions).length > 0;
-  console.log("SVG Floor Plan - Has custom positions:", hasCustomPositions, tablePositions);
+  // If no positions, show a message
+  if (!positions.length) {
+    return <div className="p-6 text-red-600"><p>No saved seating chart found. Please contact the wedding organizers.</p></div>;
+  }
 
   return (
     <svg
@@ -533,14 +551,13 @@ function SVGFloorPlan({
         const count = tablesFilled[n] ?? 0;
         const nickname = tableNicknames[n] || "";
         const isHighlighted = n === highlightedTable;
-        
         return (
           <g key={n}>
-            <circle 
-              cx={x} 
-              cy={y} 
-              r={tableR} 
-              fill={isHighlighted ? "#fef3c7" : "#ffffff"} 
+            <circle
+              cx={x}
+              cy={y}
+              r={tableR}
+              fill={isHighlighted ? "#fef3c7" : "#ffffff"}
               stroke={
                 isHighlighted 
                   ? "#f59e0b" 
@@ -586,7 +603,7 @@ function SVGFloorPlan({
   );
 }
 
-// Zoomable wrapper for mobile-friendly floor plan
+// Zoomable floor plan wrapper component
 function ZoomableFloorPlan({
   tablesFilled,
   capacity,
@@ -602,10 +619,14 @@ function ZoomableFloorPlan({
   highlightedTable: number | null;
   onTableClick?: (tableNumber: number) => void;
 }) {
+  const isMobile = useIsMobile();
+  
   const [scale, setScale] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
+  const [initialPinchDistance, setInitialPinchDistance] = useState<number>(0);
+  const [initialScale, setInitialScale] = useState<number>(1);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Set initial scale based on screen size
@@ -657,6 +678,17 @@ function ZoomableFloorPlan({
       setIsPanning(true);
       const touch = e.touches[0];
       setStartPos({ x: touch.clientX - position.x, y: touch.clientY - position.y });
+    } else if (e.touches.length === 2) {
+      // Pinch start
+      const touch1 = e.touches[0];
+      const touch2 = e.touches[1];
+      const distance = Math.hypot(
+        touch2.clientX - touch1.clientX,
+        touch2.clientY - touch1.clientY
+      );
+      setInitialPinchDistance(distance);
+      setInitialScale(scale);
+      setIsPanning(false);
     }
   };
 
@@ -665,11 +697,26 @@ function ZoomableFloorPlan({
     if (e.touches.length === 1 && isPanning) {
       const touch = e.touches[0];
       setPosition({ x: touch.clientX - startPos.x, y: touch.clientY - startPos.y });
+    } else if (e.touches.length === 2 && initialPinchDistance > 0) {
+      // Pinch zoom
+      const touch1 = e.touches[0];
+      const touch2 = e.touches[1];
+      const currentDistance = Math.hypot(
+        touch2.clientX - touch1.clientX,
+        touch2.clientY - touch1.clientY
+      );
+      
+      const scaleMultiplier = currentDistance / initialPinchDistance;
+      const newScale = Math.max(0.3, Math.min(3, initialScale * scaleMultiplier));
+      setScale(newScale);
     }
   };
 
-  const handleTouchEnd = () => {
-    setIsPanning(false);
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (e.touches.length === 0) {
+      setIsPanning(false);
+      setInitialPinchDistance(0);
+    }
   };
 
   const resetZoom = () => {
@@ -688,30 +735,43 @@ function ZoomableFloorPlan({
 
   return (
     <div className="relative w-full">
-      {/* Zoom controls */}
-      <div className="absolute top-2 right-2 z-10 flex flex-col gap-1 sm:gap-2">
-        <button
-          onClick={() => setScale(Math.min(scale + 0.2, 3))}
-          className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-900 text-white border-2 border-gray-700 rounded-md shadow-lg hover:bg-gray-800 active:bg-gray-700 flex items-center justify-center text-sm sm:text-base font-bold transition-colors"
-        >
-          +
-        </button>
-        <button
-          onClick={() => setScale(Math.max(scale - 0.2, 0.3))}
-          className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-900 text-white border-2 border-gray-700 rounded-md shadow-lg hover:bg-gray-800 active:bg-gray-700 flex items-center justify-center text-sm sm:text-base font-bold transition-colors"
-        >
-          −
-        </button>
+      {/* Zoom controls - hidden on mobile */}
+      {!isMobile && (
+        <div className="absolute top-2 right-2 z-10 flex flex-col gap-1 sm:gap-2">
+          <button
+            onClick={() => setScale(Math.min(scale + 0.2, 3))}
+            className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-900 text-white border-2 border-gray-700 rounded-md shadow-lg hover:bg-gray-800 active:bg-gray-700 flex items-center justify-center text-sm sm:text-base font-bold transition-colors"
+          >
+            +
+          </button>
+          <button
+            onClick={() => setScale(Math.max(scale - 0.2, 0.3))}
+            className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-900 text-white border-2 border-gray-700 rounded-md shadow-lg hover:bg-gray-800 active:bg-gray-700 flex items-center justify-center text-sm sm:text-base font-bold transition-colors"
+          >
+            −
+          </button>
+          <button
+            onClick={resetZoom}
+            className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-900 text-white border-2 border-gray-700 rounded-md shadow-lg hover:bg-gray-800 active:bg-gray-700 flex items-center justify-center text-xs sm:text-sm font-bold transition-colors"
+          >
+            ⌂
+          </button>
+        </div>
+      )}
+
+      {/* Mobile reset button */}
+      {isMobile && (
         <button
           onClick={resetZoom}
-          className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-900 text-white border-2 border-gray-700 rounded-md shadow-lg hover:bg-gray-800 active:bg-gray-700 flex items-center justify-center text-xs sm:text-sm font-bold transition-colors"
+          className="absolute top-4 left-4 z-10 px-3 py-2 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
+          title="Reset View"
         >
-          ⌂
+          Reset View
         </button>
-      </div>
+      )}
 
       {/* Instructions for mobile */}
-      <div className="absolute bottom-2 left-2 z-10 bg-gray-900 text-white text-xs px-3 py-2 rounded-md sm:hidden shadow-lg border border-gray-700">
+      <div className={`absolute bottom-2 left-2 z-10 bg-gray-900 text-white text-xs px-3 py-2 rounded-md shadow-lg border border-gray-700 ${isMobile ? 'block' : 'hidden'}`}>
         Pinch to zoom • Drag to pan • Tap tables for details
       </div>
 

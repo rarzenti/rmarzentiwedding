@@ -131,7 +131,8 @@ function MobileNav({ links, adminLinks, adminMode, pathname, onLogout }: MobileN
                     ? "text-gray-900 bg-gray-100"
                     : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
                 }`}
-                onClick={() => setOpen(false)}
+                onClick={() => setOpen(false)
+                }
               >
                 {l.label}
               </Link>
@@ -255,7 +256,7 @@ export default function Navbar() {
   const adminLinks = [
     { href: "/admin", label: "Guest Adder" },
     { href: "/admin/guests", label: "Guest Data" },
-    { href: "/admin/allergies", label: "Food Allergies" },
+    { href: "/admin/meals", label: "Meals" },
     { href: "/admin/seating", label: "Seating Chart" },
   ];
 

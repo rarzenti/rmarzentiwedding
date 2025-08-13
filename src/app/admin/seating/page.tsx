@@ -1,7 +1,21 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import { TrashIcon, PlusIcon, XMarkIcon } from "@heroicons/react/24/outline";
+
+// Custom hook for mobile detection
+const useIsMobile = () => {
+  const [isMobile, setIsMobile] = useState(false);
+  
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+  
+  return isMobile;
+};
 
 interface GroupItem {
   id: string;
@@ -15,6 +29,8 @@ interface GroupItem {
 }
 
 export default function SeatingPlannerPage() {
+  const isMobile = useIsMobile();
+  
   const [groups, setGroups] = useState<GroupItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -135,8 +151,14 @@ export default function SeatingPlannerPage() {
   const [highlightedTable, setHighlightedTable] = useState<number | null>(null);
   const [showGuestDropdown, setShowGuestDropdown] = useState(false);
 
-  // Table positions state for drag functionality
+  // Table positions state for drag functionality - now using normalized coordinates (0-1)
   const [tablePositions, setTablePositions] = useState<Record<number, { x: number; y: number }>>({});
+  
+  // Zoom and pan state
+  const [zoomLevel, setZoomLevel] = useState(1);
+  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
+  const [isPanning, setIsPanning] = useState(false);
+  const [lastPanPoint, setLastPanPoint] = useState({ x: 0, y: 0 });
   
   // Drag state
   const [dragging, setDragging] = useState<{ 
@@ -163,9 +185,24 @@ export default function SeatingPlannerPage() {
       setGroups(groupsData.groups || []);
       setTableNicknames(tablesData.nicknames || {});
       
-      // Load saved floor layout
+      // Load saved floor layout and convert legacy absolute coordinates to normalized
       if (layoutData.success && layoutData.layout) {
-        setTablePositions(layoutData.layout);
+        const normalizedPositions: Record<number, { x: number; y: number }> = {};
+        Object.entries(layoutData.layout).forEach(([tableNum, pos]: [string, any]) => {
+          // Check if coordinates are already normalized (0-1 range) or legacy absolute coordinates
+          if (pos.x <= 1 && pos.y <= 1 && pos.x >= 0 && pos.y >= 0) {
+            // Already normalized
+            normalizedPositions[parseInt(tableNum)] = pos;
+          } else {
+            // Legacy absolute coordinates - convert to normalized (0-1)
+            // Assuming original viewBox was 1000x600
+            normalizedPositions[parseInt(tableNum)] = {
+              x: Math.max(0, Math.min(1, pos.x / 1000)),
+              y: Math.max(0, Math.min(1, pos.y / 600))
+            };
+          }
+        });
+        setTablePositions(normalizedPositions);
       }
     } catch (e: unknown) {
       if (e instanceof Error) setError(e.message || "Failed to load data");
@@ -198,8 +235,25 @@ export default function SeatingPlannerPage() {
   const resetFloorLayout = () => {
     if (confirm("Are you sure you want to reset all table positions to default?")) {
       setTablePositions({});
+      // Also reset zoom and pan
+      setZoomLevel(1);
+      setPanOffset({ x: 0, y: 0 });
     }
   };
+
+  // Zoom and pan functions
+  const handleZoomIn = useCallback(() => {
+    setZoomLevel(prev => Math.min(prev * 1.2, 3)); // Max zoom 3x
+  }, []);
+
+  const handleZoomOut = useCallback(() => {
+    setZoomLevel(prev => Math.max(prev / 1.2, 0.3)); // Min zoom 0.3x
+  }, []);
+
+  const handleResetView = useCallback(() => {
+    setZoomLevel(1);
+    setPanOffset({ x: 0, y: 0 });
+  }, []);
 
   // Group search functions
   const searchGroups = async (query: string) => {
@@ -540,92 +594,129 @@ export default function SeatingPlannerPage() {
             
             {viewMode === "floor" && (
               <div className="flex items-center gap-2">
-                <button
-                  onClick={resetFloorLayout}
-                  className="px-4 py-2 text-sm bg-gray-600 text-white rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500"
-                  title="Reset all tables to default positions"
-                >
-                  Reset Layout
-                </button>
+                {!isMobile && (
+                  <>
+                    <button
+                      onClick={handleZoomOut}
+                      className="px-3 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      title="Zoom Out"
+                    >
+                      -
+                    </button>
+                    <span className="text-sm font-medium text-black min-w-[3rem] text-center">
+                      {Math.round(zoomLevel * 100)}%
+                    </span>
+                    <button
+                      onClick={handleZoomIn}
+                      className="px-3 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      title="Zoom In"
+                    >
+                      +
+                    </button>
+                    <button
+                      onClick={handleResetView}
+                      className="px-4 py-2 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      title="Reset View"
+                    >
+                      Reset View
+                    </button>
+                    <button
+                      onClick={resetFloorLayout}
+                      className="px-4 py-2 text-sm bg-gray-600 text-white rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                      title="Reset all tables to default positions"
+                    >
+                      Reset Layout
+                    </button>
+                  </>
+                )}
               </div>
             )}
           </div>
         </div>
 
-        <section className="mb-6 flex items-center gap-3">
-          <label className="text-sm font-medium text-black">Select table</label>
-          <div className="relative inline-block">
-            <select
-              value={selectedTable}
-              onChange={(e) => setSelectedTable(Number(e.target.value))}
-              className="appearance-none w-72 h-11 rounded-xl border-2 border-gray-700 bg-white/95 px-4 pr-10 text-black shadow-sm focus:outline-none focus:ring-4 focus:ring-black/10 focus:border-black"
-            >
-              {Array.from({ length: 20 }).map((_, i) => (
-                <option key={i + 1} value={i + 1}>
-                  {`Table ${i + 1}${tableNicknames[i + 1] ? ` — ${tableNicknames[i + 1]}` : ""} (${tablesFilled[i + 1]}/${CAPACITY})`}
-                </option>
-              ))}
-            </select>
-            <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-gray-700">
-              <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z" clipRule="evenodd" />
-              </svg>
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <input
-              value={nickDraft}
-              onChange={(e) => setNickDraft(e.target.value)}
-              placeholder="Add nickname (optional)"
-              className="h-11 rounded-xl border-2 border-gray-700 bg-white/95 px-3 text-black shadow-sm focus:outline-none focus:ring-4 focus:ring-black/10 focus:border-black"
-            />
-            <button
-              onClick={saveNickname}
-              disabled={savingNickname}
-              className="h-11 px-4 rounded-xl bg-black text-white disabled:opacity-60"
-            >
-              {savingNickname ? "Saving…" : "Save"}
-            </button>
-          </div>
+        <section className="mb-6">
+          <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+            {/* Table selection - full width on mobile */}
+            <div className="flex items-center gap-3">
+              <label className="text-sm font-medium text-black whitespace-nowrap">Select table</label>
+              <div className="relative flex-1 lg:flex-none">
+                <select
+                  value={selectedTable}
+                  onChange={(e) => setSelectedTable(Number(e.target.value))}
+                  className="appearance-none w-full lg:w-72 h-11 rounded-xl border-2 border-gray-700 bg-white/95 px-4 pr-10 text-black shadow-sm focus:outline-none focus:ring-4 focus:ring-black/10 focus:border-black"
+                >
+                  {Array.from({ length: 20 }).map((_, i) => (
+                    <option key={i + 1} value={i + 1}>
+                      {`Table ${i + 1}${tableNicknames[i + 1] ? ` — ${tableNicknames[i + 1]}` : ""} (${tablesFilled[i + 1]}/${CAPACITY})`}
+                    </option>
+                  ))}
+                </select>
+                <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-gray-700">
+                  <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z" clipRule="evenodd" />
+                  </svg>
+                </span>
+              </div>
+            </div>
 
-          {/* Guest Search Bar */}
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Search for a guest..."
-              value={guestSearchQuery}
-              onChange={(e) => setGuestSearchQuery(e.target.value)}
-              onFocus={() => guestSearchQuery.trim() && setShowGuestDropdown(true)}
-              onBlur={() => setTimeout(() => setShowGuestDropdown(false), 200)}
-              className="h-11 w-80 rounded-xl border-2 border-gray-700 bg-white px-4 pr-10 text-black shadow-sm focus:outline-none focus:ring-4 focus:ring-black/10 focus:border-black placeholder:text-gray-500"
-            />
-            <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500">
-              <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                <path fillRule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clipRule="evenodd" />
-              </svg>
-            </span>
-            
-            {/* Guest Dropdown */}
-            {showGuestDropdown && guestSearchResults.length > 0 && (
-              <div className="absolute top-full left-0 right-0 mt-1 bg-white border-2 border-gray-300 rounded-xl shadow-xl z-20 max-h-60 overflow-y-auto">
-                {guestSearchResults.map((guest) => (
-                  <button
-                    key={guest.id}
-                    onClick={() => selectGuest(guest)}
-                    className="w-full px-4 py-3 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none flex items-center justify-between border-b border-gray-100 last:border-b-0 first:rounded-t-xl last:rounded-b-xl"
-                  >
-                    <span className="font-medium text-black">{guest.name}</span>
-                    <span className={`text-xs px-2 py-1 rounded-md font-medium ${
-                      guest.tableNumber 
-                        ? 'bg-blue-600 text-white' 
-                        : 'bg-gray-800 text-white'
-                    }`}>
-                      {guest.tableNumber ? `Table ${guest.tableNumber}` : 'Not seated'}
-                    </span>
-                  </button>
-                ))}
+            {/* Hide nickname input on mobile */}
+            {!isMobile && (
+              <div className="flex items-center gap-2">
+                <input
+                  value={nickDraft}
+                  onChange={(e) => setNickDraft(e.target.value)}
+                  placeholder="Add nickname (optional)"
+                  className="h-11 rounded-xl border-2 border-gray-700 bg-white/95 px-3 text-black shadow-sm focus:outline-none focus:ring-4 focus:ring-black/10 focus:border-black"
+                />
+                <button
+                  onClick={saveNickname}
+                  disabled={savingNickname}
+                  className="h-11 px-4 rounded-xl bg-black text-white disabled:opacity-60"
+                >
+                  {savingNickname ? "Saving…" : "Save"}
+                </button>
               </div>
             )}
+
+            {/* Guest Search Bar - moves below table selection on mobile */}
+            <div className="relative w-full lg:w-auto">
+              <input
+                type="text"
+                placeholder="Search for a guest..."
+                value={guestSearchQuery}
+                onChange={(e) => setGuestSearchQuery(e.target.value)}
+                onFocus={() => guestSearchQuery.trim() && setShowGuestDropdown(true)}
+                onBlur={() => setTimeout(() => setShowGuestDropdown(false), 200)}
+                className="h-11 w-full lg:w-80 rounded-xl border-2 border-gray-700 bg-white px-4 pr-10 text-black shadow-sm focus:outline-none focus:ring-4 focus:ring-black/10 focus:border-black placeholder:text-gray-500"
+              />
+              <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500">
+                <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fillRule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clipRule="evenodd" />
+                </svg>
+              </span>
+              
+              {/* Guest Dropdown */}
+              {showGuestDropdown && guestSearchResults.length > 0 && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white border-2 border-gray-300 rounded-xl shadow-xl z-20 max-h-60 overflow-y-auto">
+                  {guestSearchResults.map((guest) => (
+                    <button
+                      key={guest.id}
+                      onClick={() => selectGuest(guest)}
+                      className="w-full px-4 py-3 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none flex items-center justify-between border-b border-gray-100 last:border-b-0 first:rounded-t-xl last:rounded-b-xl"
+                    >
+                      <span className="font-medium text-black">{guest.name}</span>
+                      <span className={`text-xs px-2 py-1 rounded-md font-medium ${
+                        guest.tableNumber 
+                          ? 'bg-blue-600 text-white' 
+                          : 'bg-gray-800 text-white'
+                      }`}>
+                        {guest.tableNumber ? `Table ${guest.tableNumber}` : 'Not seated'}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </section>
 
@@ -823,7 +914,7 @@ export default function SeatingPlannerPage() {
         ) : (
           <div className="space-y-4">
             {/* Floor plan diagram */}
-            <div className="border-2 border-indigo-300 rounded-xl bg-white/90 backdrop-blur-sm p-2 shadow-sm relative">
+            <div className="border-2 border-indigo-300 rounded-xl bg-white/90 backdrop-blur-sm p-2 shadow-sm relative overflow-hidden">
               <SVGFloorPlan
                 selectedTable={selectedTable}
                 setSelectedTable={setSelectedTable}
@@ -836,12 +927,20 @@ export default function SeatingPlannerPage() {
                 setDragging={setDragging}
                 saveFloorLayout={saveFloorLayout}
                 highlightedTable={highlightedTable}
+                zoomLevel={zoomLevel}
+                setZoomLevel={setZoomLevel}
+                panOffset={panOffset}
+                setPanOffset={setPanOffset}
+                isPanning={isPanning}
+                setIsPanning={setIsPanning}
+                lastPanPoint={lastPanPoint}
+                setLastPanPoint={setLastPanPoint}
               />
               
               {/* Custom save icon positioned absolutely over the SVG */}
               <button
                 onClick={saveFloorLayout}
-                className="absolute top-8 right-8 hover:opacity-80 transition-opacity"
+                className="absolute top-8 right-8 hover:opacity-80 transition-opacity z-10"
                 title="Save Layout"
               >
                 <img 
@@ -850,6 +949,22 @@ export default function SeatingPlannerPage() {
                   className="w-8 h-8"
                 />
               </button>
+
+              {/* Mobile Reset View button */}
+              {isMobile && (
+                <button
+                  onClick={handleResetView}
+                  className="absolute top-8 left-8 px-3 py-2 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 z-10"
+                  title="Reset View"
+                >
+                  Reset View
+                </button>
+              )}
+
+              {/* Pan instructions - updated for mobile */}
+              <div className="absolute bottom-4 left-4 text-xs text-gray-600 bg-white/80 px-2 py-1 rounded">
+                {isMobile ? 'Pinch to zoom • Drag to pan' : 'Hold Shift + drag to pan • Ctrl + scroll to zoom'}
+              </div>
             </div>
 
             {/* Occupancy details for selected table */}
@@ -1191,7 +1306,7 @@ export default function SeatingPlannerPage() {
   );
 }
 
-// SVG floor plan component
+// SVG floor plan component with zoom/pan and responsive coordinates
 function SVGFloorPlan({
   selectedTable,
   setSelectedTable,
@@ -1204,6 +1319,14 @@ function SVGFloorPlan({
   setDragging,
   saveFloorLayout,
   highlightedTable,
+  zoomLevel,
+  setZoomLevel,
+  panOffset,
+  setPanOffset,
+  isPanning,
+  setIsPanning,
+  lastPanPoint,
+  setLastPanPoint,
 }: {
   selectedTable: number;
   setSelectedTable: (n: number) => void;
@@ -1216,7 +1339,16 @@ function SVGFloorPlan({
   setDragging: React.Dispatch<React.SetStateAction<{ tableNum: number; offsetX: number; offsetY: number } | null>>;
   saveFloorLayout: () => void;
   highlightedTable: number | null;
+  zoomLevel: number;
+  setZoomLevel: React.Dispatch<React.SetStateAction<number>>;
+  panOffset: { x: number; y: number };
+  setPanOffset: React.Dispatch<React.SetStateAction<{ x: number; y: number }>>;
+  isPanning: boolean;
+  setIsPanning: React.Dispatch<React.SetStateAction<boolean>>;
+  lastPanPoint: { x: number; y: number };
+  setLastPanPoint: React.Dispatch<React.SetStateAction<{ x: number; y: number }>>;
 }) {
+  const svgRef = useRef<SVGSVGElement>(null);
   const width = 1000;
   const height = 600;
   const cx = width / 2;
@@ -1224,180 +1356,316 @@ function SVGFloorPlan({
   const floorW = 360;
   const floorH = 200;
   const r = 260;
-  const tableR = 48.75; // Reduced by 25% from 65
+  const tableR = 48.75;
 
   const deg2rad = (d: number) => (d * Math.PI) / 180;
   const leftAngles = Array.from({ length: 10 }, (_, i) => 110 + (140 * i) / 9);
   const rightAngles = Array.from({ length: 10 }, (_, i) => -70 + (140 * i) / 9);
 
-  // Default positions
+  // Default positions in normalized coordinates (0-1)
   const defaultPositions: { n: number; x: number; y: number }[] = [];
   for (let i = 0; i < 10; i++) {
     const a = deg2rad(leftAngles[i]);
-    defaultPositions.push({ n: i + 1, x: cx + Math.cos(a) * r, y: cy + Math.sin(a) * r });
+    const absoluteX = cx + Math.cos(a) * r;
+    const absoluteY = cy + Math.sin(a) * r;
+    defaultPositions.push({ 
+      n: i + 1, 
+      x: absoluteX / width, // Normalize to 0-1
+      y: absoluteY / height 
+    });
   }
   for (let i = 0; i < 10; i++) {
     const a = deg2rad(rightAngles[i]);
-    defaultPositions.push({ n: 11 + i, x: cx + Math.cos(a) * r, y: cy + Math.sin(a) * r });
+    const absoluteX = cx + Math.cos(a) * r;
+    const absoluteY = cy + Math.sin(a) * r;
+    defaultPositions.push({ 
+      n: 11 + i, 
+      x: absoluteX / width, // Normalize to 0-1
+      y: absoluteY / height 
+    });
   }
 
-  // Get actual positions (custom or default)
-  const positions = defaultPositions.map(({ n, x, y }) => ({
+  // Convert normalized positions back to absolute for rendering
+  const positions = defaultPositions.map(({ n, x: defaultX, y: defaultY }) => ({
     n,
-    x: tablePositions[n]?.x ?? x,
-    y: tablePositions[n]?.y ?? y,
+    x: (tablePositions[n]?.x ?? defaultX) * width,
+    y: (tablePositions[n]?.y ?? defaultY) * height,
   }));
 
-  const handleMouseDown = (e: React.MouseEvent, tableNum: number) => {
+  // Constrain coordinates to viewBox bounds with padding
+  const constrainPosition = (x: number, y: number) => {
+    const padding = tableR + 10; // Table radius plus some margin
+    return {
+      x: Math.max(padding, Math.min(width - padding, x)),
+      y: Math.max(padding, Math.min(height - padding, y))
+    };
+  };
+
+  // Convert SVG coordinates to normalized coordinates
+  const getSVGCoordinates = (clientX: number, clientY: number) => {
+    if (!svgRef.current) return { x: 0, y: 0 };
+    
+    const svg = svgRef.current;
+    const rect = svg.getBoundingClientRect();
+    
+    // Calculate position within the SVG viewport
+    const x = ((clientX - rect.left) / rect.width) * width;
+    const y = ((clientY - rect.top) / rect.height) * height;
+    
+    return { x, y };
+  };
+
+  // Touch gesture support for mobile
+  const [initialPinchDistance, setInitialPinchDistance] = useState<number>(0);
+  const [initialZoomLevel, setInitialZoomLevel] = useState<number>(1);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    const touches = e.touches;
+    
+    if (touches.length === 1) {
+      // Single touch - potential pan start
+      const touch = touches[0];
+      setLastPanPoint({ x: touch.clientX, y: touch.clientY });
+      setIsPanning(true);
+    } else if (touches.length === 2) {
+      // Pinch start
+      const touch1 = touches[0];
+      const touch2 = touches[1];
+      const distance = Math.hypot(
+        touch2.clientX - touch1.clientX,
+        touch2.clientY - touch1.clientY
+      );
+      setInitialPinchDistance(distance);
+      setInitialZoomLevel(zoomLevel);
+      setIsPanning(false); // Stop panning during pinch
+    }
+  }, [zoomLevel]);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    e.preventDefault(); // Prevent scroll
+    const touches = e.touches;
+    
+    if (touches.length === 1 && isPanning) {
+      // Single finger pan
+      const touch = touches[0];
+      const deltaX = touch.clientX - lastPanPoint.x;
+      const deltaY = touch.clientY - lastPanPoint.y;
+      
+      setPanOffset(prev => ({
+        x: prev.x + deltaX,
+        y: prev.y + deltaY
+      }));
+      
+      setLastPanPoint({ x: touch.clientX, y: touch.clientY });
+    } else if (touches.length === 2 && initialPinchDistance > 0) {
+      // Pinch zoom
+      const touch1 = touches[0];
+      const touch2 = touches[1];
+      const currentDistance = Math.hypot(
+        touch2.clientX - touch1.clientX,
+        touch2.clientY - touch1.clientY
+      );
+      
+      const scale = currentDistance / initialPinchDistance;
+      const newZoom = Math.max(0.3, Math.min(3, initialZoomLevel * scale));
+      setZoomLevel(newZoom);
+    }
+  }, [isPanning, lastPanPoint, initialPinchDistance, initialZoomLevel]);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (e.touches.length === 0) {
+      setIsPanning(false);
+      setInitialPinchDistance(0);
+    }
+  }, []);
+
+  const handleMouseDown = (e: React.MouseEvent, tableNum?: number) => {
     e.preventDefault();
     e.stopPropagation();
     
-    const svg = e.currentTarget.closest('svg') as SVGSVGElement;
+    const coords = getSVGCoordinates(e.clientX, e.clientY);
     
-    // Use SVG's built-in coordinate conversion for perfect accuracy
-    const pt = svg.createSVGPoint();
-    pt.x = e.clientX;
-    pt.y = e.clientY;
-    const svgPoint = pt.matrixTransform(svg.getScreenCTM()!.inverse());
-    
-    // Find the current position of this table
-    const currentPos = positions.find(p => p.n === tableNum);
-    if (!currentPos) return;
-    
-    // Calculate offset between mouse position and table center
-    const offsetX = svgPoint.x - currentPos.x;
-    const offsetY = svgPoint.y - currentPos.y;
-    
-    console.log('Mouse down on table:', tableNum, 'offset:', offsetX, offsetY); // Debug log
-    setDragging({ tableNum, offsetX, offsetY });
-
-    // Add global mouse event listeners for better drag handling
-    const handleGlobalMouseMove = (globalE: MouseEvent) => {
-      const pt = svg.createSVGPoint();
-      pt.x = globalE.clientX;
-      pt.y = globalE.clientY;
-      const svgPoint = pt.matrixTransform(svg.getScreenCTM()!.inverse());
+    if (e.shiftKey && !tableNum) {
+      // Start panning
+      setIsPanning(true);
+      setLastPanPoint({ x: e.clientX, y: e.clientY });
+    } else if (tableNum) {
+      // Start dragging table
+      const currentPos = positions.find(p => p.n === tableNum);
+      if (!currentPos) return;
       
-      const tableX = svgPoint.x - offsetX;
-      const tableY = svgPoint.y - offsetY;
+      const offsetX = coords.x - currentPos.x;
+      const offsetY = coords.y - currentPos.y;
       
-      setTablePositions(prev => ({
-        ...prev,
-        [tableNum]: { x: tableX, y: tableY }
-      }));
-    };
-
-    const handleGlobalMouseUp = () => {
-      setDragging(null);
-      document.removeEventListener('mousemove', handleGlobalMouseMove);
-      document.removeEventListener('mouseup', handleGlobalMouseUp);
-    };
-
-    document.addEventListener('mousemove', handleGlobalMouseMove);
-    document.addEventListener('mouseup', handleGlobalMouseUp);
-  };
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    // This is now handled by global listeners for better accuracy
-    // Keeping this as fallback
-  };
-
-  const handleMouseUp = () => {
-    // This is now handled by global listeners
-    // Keeping this as fallback
-    if (dragging) {
-      setDragging(null);
+      setDragging({ tableNum, offsetX, offsetY });
     }
   };
 
+  const handleGlobalMouseMove = useCallback((e: MouseEvent) => {
+    if (isPanning) {
+      const deltaX = e.clientX - lastPanPoint.x;
+      const deltaY = e.clientY - lastPanPoint.y;
+      
+      setPanOffset(prev => ({
+        x: prev.x + deltaX / zoomLevel,
+        y: prev.y + deltaY / zoomLevel
+      }));
+      
+      setLastPanPoint({ x: e.clientX, y: e.clientY });
+    } else if (dragging) {
+      const coords = getSVGCoordinates(e.clientX, e.clientY);
+      const newX = coords.x - dragging.offsetX;
+      const newY = coords.y - dragging.offsetY;
+      
+      // Constrain position within bounds
+      const constrained = constrainPosition(newX, newY);
+      
+      // Update position in normalized coordinates
+      setTablePositions(prev => ({
+        ...prev,
+        [dragging.tableNum]: { 
+          x: constrained.x / width, 
+          y: constrained.y / height 
+        }
+      }));
+    }
+  }, [isPanning, dragging, lastPanPoint, zoomLevel, setPanOffset, setTablePositions]);
+
+  const handleGlobalMouseUp = useCallback(() => {
+    setIsPanning(false);
+    setDragging(null);
+  }, [setIsPanning, setDragging]);
+
+  // Set up global mouse event listeners
+  useEffect(() => {
+    if (isPanning || dragging) {
+      document.addEventListener('mousemove', handleGlobalMouseMove);
+      document.addEventListener('mouseup', handleGlobalMouseUp);
+      
+      return () => {
+        document.removeEventListener('mousemove', handleGlobalMouseMove);
+        document.removeEventListener('mouseup', handleGlobalMouseUp);
+      };
+    }
+  }, [isPanning, dragging, handleGlobalMouseMove, handleGlobalMouseUp]);
+
+  // Calculate transform for zoom and pan
+  const transform = `translate(${panOffset.x}, ${panOffset.y}) scale(${zoomLevel})`;
+
   return (
     <svg 
+      ref={svgRef}
       viewBox={`0 0 ${width} ${height}`} 
-      className="w-full h-[420px]"
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseUp}
+      className="w-full h-[420px] cursor-grab active:cursor-grabbing"
+      onMouseDown={handleMouseDown}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      style={{ touchAction: 'none' }} // Prevent touch scrolling
     >
-      {/* Head table */}
-      <g>
-        <circle cx={cx} cy={cy - floorH / 2 - 90} r={40} fill="#ffffff" stroke="#111827" strokeWidth={2} />
-        <text x={cx} y={cy - floorH / 2 - 90} textAnchor="middle" dominantBaseline="middle" className="fill-black" style={{ fontSize: 14, fontWeight: 600 }}>
-          Head Table
+      <g transform={transform}>
+        {/* Head table */}
+        <g>
+          <circle cx={cx} cy={cy - floorH / 2 - 90} r={40} fill="#ffffff" stroke="#111827" strokeWidth={2} />
+          <text x={cx} y={cy - floorH / 2 - 90} textAnchor="middle" dominantBaseline="middle" className="fill-black" style={{ fontSize: 14, fontWeight: 600 }}>
+            Head Table
+          </text>
+        </g>
+
+        {/* Dance floor */}
+        <rect x={cx - floorW / 2} y={cy - floorH / 2} width={floorW} height={floorH} rx={14} fill="#fde68a" stroke="#f59e0b" strokeWidth={2} />
+        <text x={cx} y={cy} textAnchor="middle" dominantBaseline="middle" className="fill-black" style={{ fontSize: 14, fontWeight: 600 }}>
+          Dance Floor
         </text>
-      </g>
 
-      {/* Dance floor */}
-      <rect x={cx - floorW / 2} y={cy - floorH / 2} width={floorW} height={floorH} rx={14} fill="#fde68a" stroke="#f59e0b" strokeWidth={2} />
-      <text x={cx} y={cy} textAnchor="middle" dominantBaseline="middle" className="fill-black" style={{ fontSize: 14, fontWeight: 600 }}>
-        Dance Floor
-      </text>
-
-      {/* Tables */}
-      {positions.map(({ n, x, y }) => {
-        const selected = n === selectedTable;
-        const count = tablesFilled[n] ?? 0;
-        const nickname = tableNicknames[n] || "";
-        const isDragging = dragging?.tableNum === n;
-        const isHighlighted = n === highlightedTable;
-        return (
-          <g 
-            key={n} 
-            className={isDragging ? "cursor-grabbing" : "cursor-grab"}
-            onMouseDown={(e) => handleMouseDown(e, n)}
-            onClick={(e) => {
-              e.preventDefault();
-              if (!dragging) setSelectedTable(n);
-            }}
-            style={{ userSelect: 'none' }}
-          >
-            <circle 
-              cx={x} 
-              cy={y} 
-              r={tableR} 
-              fill={isHighlighted ? "#fef3c7" : "#ffffff"} 
-              stroke={
-                isHighlighted 
-                  ? "#f59e0b" 
-                  : selected 
-                    ? "#2563eb" 
-                    : isDragging 
-                      ? "#dc2626" 
-                      : "#6b7280"
-              } 
-              strokeWidth={isHighlighted ? 4 : selected ? 4 : isDragging ? 3 : 2}
-            />
-            <text 
-              x={x} 
-              y={y - 2} 
-              textAnchor="middle" 
-              className="fill-black" 
-              style={{ fontSize: 16, fontWeight: 700, pointerEvents: 'none' }}
+        {/* Tables */}
+        {positions.map(({ n, x, y }) => {
+          const selected = n === selectedTable;
+          const count = tablesFilled[n] ?? 0;
+          const nickname = tableNicknames[n] || "";
+          const isDragging = dragging?.tableNum === n;
+          const isHighlighted = n === highlightedTable;
+          
+          return (
+            <g 
+              key={n} 
+              className={isDragging ? "cursor-grabbing" : "cursor-grab"}
+              onMouseDown={(e) => handleMouseDown(e, n)}
+              onClick={(e) => {
+                e.preventDefault();
+                if (!dragging && !isPanning) setSelectedTable(n);
+              }}
+              style={{ userSelect: 'none' }}
             >
-              {n}
-            </text>
-            <text 
-              x={x} 
-              y={y + 12} 
-              textAnchor="middle" 
-              className="fill-gray-700" 
-              style={{ fontSize: 13, pointerEvents: 'none' }}
-            >
-              {`${count}/${capacity}`}
-            </text>
-            {nickname ? (
+              <circle 
+                cx={x} 
+                cy={y} 
+                r={tableR} 
+                fill={isHighlighted ? "#fef3c7" : "#ffffff"} 
+                stroke={
+                  isHighlighted 
+                    ? "#f59e0b" 
+                    : selected 
+                      ? "#2563eb" 
+                      : isDragging 
+                        ? "#dc2626" 
+                        : "#6b7280"
+                } 
+                strokeWidth={isHighlighted ? 4 : selected ? 4 : isDragging ? 3 : 2}
+              />
+              
+              {/* Table number */}
               <text 
                 x={x} 
-                y={y + 26} 
+                y={y - 5} 
                 textAnchor="middle" 
-                className="fill-gray-600" 
-                style={{ fontSize: 12, pointerEvents: 'none' }}
+                dominantBaseline="middle" 
+                className="fill-black pointer-events-none" 
+                style={{ fontSize: 12, fontWeight: 600 }}
               >
-                {nickname.length > 14 ? nickname.slice(0, 14) + "…" : nickname}
+                {n}
               </text>
-            ) : null}
-          </g>
-        );
-      })}
+              
+              {/* Guest count */}
+              <text 
+                x={x} 
+                y={y + 8} 
+                textAnchor="middle" 
+                dominantBaseline="middle" 
+                className="fill-gray-600 pointer-events-none" 
+                style={{ fontSize: 10 }}
+              >
+                {count}/{capacity}
+              </text>
+              
+              {/* Nickname if exists */}
+              {nickname && (
+                <text 
+                  x={x} 
+                  y={y + 20} 
+                  textAnchor="middle" 
+                  dominantBaseline="middle" 
+                  className="fill-blue-600 pointer-events-none" 
+                  style={{ fontSize: 8, fontStyle: 'italic' }}
+                >
+                  {nickname.length > 10 ? nickname.substring(0, 10) + '...' : nickname}
+                </text>
+              )}
+            </g>
+          );
+        })}
+      </g>
+
+      {/* Zoom level indicator */}
+      <text 
+        x={width - 10} 
+        y={20} 
+        textAnchor="end" 
+        className="fill-gray-500 pointer-events-none" 
+        style={{ fontSize: 12 }}
+      >
+        {Math.round(zoomLevel * 100)}%
+      </text>
     </svg>
   );
 }
