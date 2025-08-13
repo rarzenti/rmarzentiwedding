@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from 'next/link';
 
 interface GroupItem {
@@ -189,45 +189,7 @@ function ZoomableFloorPlan({
 }
 
 export default function GuestSeatingPage() {
-  // Date restriction: Only allow access after May 15, 2026 at 11:59 PM (UTC)
-  const WEDDING_DAY_ACCESS = new Date("2026-05-15T23:59:00Z");
-  const isSeatingAvailable = new Date() >= WEDDING_DAY_ACCESS;
-
-  // Gate BEFORE any hooks to avoid conditional hooks rule
-  if (!isSeatingAvailable) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-rose-50 to-pink-50 flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white rounded-xl shadow-lg border border-rose-200 p-8 text-center">
-          <div className="mb-6">
-            <div className="w-16 h-16 mx-auto bg-rose-100 rounded-full flex items-center justify-center mb-4">
-              <svg className="w-8 h-8 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-              </svg>
-            </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Seating Chart Coming Soon</h1>
-            <p className="text-gray-600 mb-4">The seating chart will be available on the day of the wedding.</p>
-            <p className="text-sm text-gray-500">Access begins: <br /><span className="font-semibold text-rose-600">May 15, 2026 at 11:59 PM</span></p>
-          </div>
-          <div className="space-y-3">
-            <Link 
-              href="/"
-              className="block w-full bg-rose-600 text-white py-3 px-4 rounded-lg hover:bg-rose-700 transition-colors font-medium"
-            >
-              Return to Home
-            </Link>
-            <Link 
-              href="/rsvp"
-              className="block w-full bg-gray-100 text-gray-700 py-3 px-4 rounded-lg hover:bg-gray-200 transition-colors font-medium"
-            >
-              Complete RSVP
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Hooks (only run when seating is available)
+  // Hooks always run
   const [groups, setGroups] = useState<GroupItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -341,6 +303,42 @@ export default function GuestSeatingPage() {
     groups.forEach((g) => g.guests.forEach((m) => { if (m.tableNumber) counts[m.tableNumber] = (counts[m.tableNumber] || 0) + 1; }));
     return counts;
   }, [groups]);
+
+  const WEDDING_DAY_ACCESS = new Date("2026-05-15T23:59:00Z");
+  const isSeatingAvailable = new Date() >= WEDDING_DAY_ACCESS;
+
+  if (!isSeatingAvailable) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-rose-50 to-pink-50 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white rounded-xl shadow-lg border border-rose-200 p-8 text-center">
+          <div className="mb-6">
+            <div className="w-16 h-16 mx-auto bg-rose-100 rounded-full flex items-center justify-center mb-4">
+              <svg className="w-8 h-8 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Seating Chart Coming Soon</h1>
+            <p className="text-gray-600 mb-4">The seating chart will be available on the day of the wedding.</p>
+            <p className="text-sm text-gray-500">Access begins: <br /><span className="font-semibold text-rose-600">May 15, 2026 at 11:59 PM</span></p>
+          </div>
+          <div className="space-y-3">
+            <Link 
+              href="/"
+              className="block w-full bg-rose-600 text-white py-3 px-4 rounded-lg hover:bg-rose-700 transition-colors font-medium"
+            >
+              Return to Home
+            </Link>
+            <Link 
+              href="/rsvp"
+              className="block w-full bg-gray-100 text-gray-700 py-3 px-4 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+            >
+              Complete RSVP
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (loading || floorLayoutLoading) return <div className="p-6"><p>Loading seating chart...</p></div>;
   if (error) return <div className="p-6 text-red-600"><p>Error: {error}</p></div>;

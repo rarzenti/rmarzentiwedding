@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { prisma } from "../../../lib/prisma";
 import { sendEmail } from "../../../lib/email";
 
+// Local enum type (Prisma enum not imported to avoid build issue if client not regenerated yet)
+type GuestOfEnum = 'RYAN' | 'MARSHA';
+
 // GET /api/guests - list all guests with group
 export async function GET() {
   try {
@@ -175,20 +178,20 @@ export async function PATCH(req: Request) {
 
     type RsvpStatus = "PENDING" | "YES" | "NO";
     type GuestUpdateData = {
-      title?: string | null;
-      suffix?: string | null;
-      firstName?: string;
-      lastName?: string;
-      tableNumber?: number | null;
-      email?: string | null;
-      phone?: string | null;
-      rsvpStatus?: RsvpStatus;
-      foodSelection?: string | null;
-      dietaryRestrictions?: string | null;
-      songRequests?: string | null;
-      isChild?: boolean;
-      guestOf?: string | null;
-    };
+       title?: string | null;
+       suffix?: string | null;
+       firstName?: string;
+       lastName?: string;
+       tableNumber?: number | null;
+       email?: string | null;
+       phone?: string | null;
+       rsvpStatus?: RsvpStatus;
+       foodSelection?: string | null;
+       dietaryRestrictions?: string | null;
+       songRequests?: string | null;
+       isChild?: boolean;
+       guestOf?: GuestOfEnum | null;
+     };
     const updateData: GuestUpdateData = {};
     if (typeof data.title === "string" || data.title === null) updateData.title = data.title?.trim() ?? null;
     if (typeof data.suffix === "string" || data.suffix === null) updateData.suffix = data.suffix?.trim() ?? null;
@@ -204,7 +207,16 @@ export async function PATCH(req: Request) {
     if (data.dietaryRestrictions === null || typeof data.dietaryRestrictions === "string") updateData.dietaryRestrictions = data.dietaryRestrictions ?? null;
     if (data.songRequests === null || typeof data.songRequests === "string") updateData.songRequests = data.songRequests ?? null;
     if (typeof data.isChild === "boolean") updateData.isChild = data.isChild;
-    if (typeof data.guestOf === "string" || data.guestOf === null) updateData.guestOf = data.guestOf ? data.guestOf.toUpperCase() : null;
+    if (typeof data.guestOf === "string" || data.guestOf === null) {
+      if (data.guestOf === null || data.guestOf === "") {
+        updateData.guestOf = null;
+      } else {
+        const val = data.guestOf.toUpperCase();
+        if (["RYAN", "MARSHA"].includes(val)) {
+          updateData.guestOf = val as GuestOfEnum;
+        }
+      }
+    }
 
     let groupUpdate = {};
     if (typeof groupConnect.groupId === "string") {
@@ -219,7 +231,7 @@ export async function PATCH(req: Request) {
     if (data.email === null || typeof data.email === "string") updateData.email = data.email?.trim() ?? null;
     if (data.phone === null || typeof data.phone === "string") updateData.phone = data.phone?.trim() ?? null;
     if (typeof data.tableNumber === "number") updateData.tableNumber = data.tableNumber;
-    if (typeof data.rsvpStatus === "string") updateData.rsvpStatus = data.rsvpStatus;
+    if (typeof data.rsvpStatus === "string" && ["PENDING","YES","NO"].includes(data.rsvpStatus)) updateData.rsvpStatus = data.rsvpStatus as RsvpStatus;
     if (data.foodSelection === null || typeof data.foodSelection === "string") updateData.foodSelection = data.foodSelection ?? null;
     if (data.dietaryRestrictions === null || typeof data.dietaryRestrictions === "string") updateData.dietaryRestrictions = data.dietaryRestrictions ?? null;
     if (data.songRequests === null || typeof data.songRequests === "string") updateData.songRequests = data.songRequests ?? null;
