@@ -22,7 +22,7 @@ const KIDS_MEAL_VALUE = "Kids Meal";
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { title, firstName, lastName, tableNumber, groupId, groupName, email, phone, createOwnGroup, isChild, foodSelection } = body ?? {};
+    const { title, firstName, lastName, tableNumber, groupId, groupName, email, phone, createOwnGroup, isChild, foodSelection, suffix, guestOf } = body ?? {};
 
     if (!firstName || !lastName) {
       return NextResponse.json({ error: "firstName and lastName are required" }, { status: 400 });
@@ -44,18 +44,22 @@ export async function POST(req: Request) {
       finalGroupId = createdGroup.id;
     }
 
+    const baseData: any = {
+      title: title ? String(title).trim() : null,
+      firstName: String(firstName).trim(),
+      lastName: String(lastName).trim(),
+      tableNumber: typeof tableNumber === "number" ? tableNumber : tableNumber ? Number(tableNumber) : null,
+      email: email ? String(email).trim() : null,
+      phone: phone ? String(phone).trim() : null,
+      isChild: Boolean(isChild) || false,
+      foodSelection: typeof foodSelection === "string" && foodSelection.trim() !== "" ? String(foodSelection) : (isChild ? KIDS_MEAL_VALUE : null),
+      groupId: finalGroupId,
+    };
+    if (suffix) baseData.suffix = String(suffix).trim(); else baseData.suffix = null;
+    if (guestOf && ["RYAN","MARSHA"].includes(String(guestOf).toUpperCase())) baseData.guestOf = String(guestOf).toUpperCase();
+
     const created = await prisma.guest.create({
-      data: {
-        title: title ? String(title).trim() : null,
-        firstName: String(firstName).trim(),
-        lastName: String(lastName).trim(),
-        tableNumber: typeof tableNumber === "number" ? tableNumber : tableNumber ? Number(tableNumber) : null,
-        email: email ? String(email).trim() : null,
-        phone: phone ? String(phone).trim() : null,
-        isChild: Boolean(isChild) || false,
-        foodSelection: typeof foodSelection === "string" && foodSelection.trim() !== "" ? String(foodSelection) : (isChild ? KIDS_MEAL_VALUE : null),
-        groupId: finalGroupId,
-      },
+      data: baseData,
       include: { group: true },
     });
 
@@ -172,6 +176,7 @@ export async function PATCH(req: Request) {
     type RsvpStatus = "PENDING" | "YES" | "NO";
     type GuestUpdateData = {
       title?: string | null;
+      suffix?: string | null;
       firstName?: string;
       lastName?: string;
       tableNumber?: number | null;
@@ -182,9 +187,11 @@ export async function PATCH(req: Request) {
       dietaryRestrictions?: string | null;
       songRequests?: string | null;
       isChild?: boolean;
+      guestOf?: string | null;
     };
     const updateData: GuestUpdateData = {};
     if (typeof data.title === "string" || data.title === null) updateData.title = data.title?.trim() ?? null;
+    if (typeof data.suffix === "string" || data.suffix === null) updateData.suffix = data.suffix?.trim() ?? null;
     if (typeof data.firstName === "string") updateData.firstName = data.firstName.trim();
     if (typeof data.lastName === "string") updateData.lastName = data.lastName.trim();
     if (data.email === null || typeof data.email === "string") updateData.email = data.email?.trim() ?? null;
@@ -197,6 +204,7 @@ export async function PATCH(req: Request) {
     if (data.dietaryRestrictions === null || typeof data.dietaryRestrictions === "string") updateData.dietaryRestrictions = data.dietaryRestrictions ?? null;
     if (data.songRequests === null || typeof data.songRequests === "string") updateData.songRequests = data.songRequests ?? null;
     if (typeof data.isChild === "boolean") updateData.isChild = data.isChild;
+    if (typeof data.guestOf === "string" || data.guestOf === null) updateData.guestOf = data.guestOf ? data.guestOf.toUpperCase() : null;
 
     let groupUpdate = {};
     if (typeof groupConnect.groupId === "string") {
@@ -205,6 +213,7 @@ export async function PATCH(req: Request) {
       groupUpdate = { group: { disconnect: true } };
     }
     if (typeof data.title === "string" || data.title === null) updateData.title = data.title?.trim() ?? null;
+    if (typeof data.suffix === "string" || data.suffix === null) updateData.suffix = data.suffix?.trim() ?? null;
     if (typeof data.firstName === "string") updateData.firstName = data.firstName.trim();
     if (typeof data.lastName === "string") updateData.lastName = data.lastName.trim();
     if (data.email === null || typeof data.email === "string") updateData.email = data.email?.trim() ?? null;

@@ -19,7 +19,7 @@ export async function GET() {
 }
 
 // POST /api/groups - create a group with members
-// Body: { name?: string, members: Array<{ title?: string; firstName: string; lastName: string; tableNumber?: number; email?: string; phone?: string; isChild?: boolean; }> }
+// Body: { name?: string, members: Array<{ title?: string; firstName: string; lastName: string; suffix?: string; guestOf?: 'RYAN' | 'MARSHA'; tableNumber?: number; email?: string; phone?: string; isChild?: boolean; }> }
 export async function POST(req: Request) {
   try {
     const body = await req.json();
@@ -34,6 +34,8 @@ export async function POST(req: Request) {
       title?: string;
       firstName: string;
       lastName: string;
+      suffix?: string;
+      guestOf?: string; // expect 'RYAN' | 'MARSHA'
       tableNumber?: number;
       email?: string;
       phone?: string;
@@ -44,6 +46,8 @@ export async function POST(req: Request) {
         title: m.title ? String(m.title).trim() : null,
         firstName: String(m.firstName).trim(),
         lastName: String(m.lastName).trim(),
+        suffix: m.suffix ? String(m.suffix).trim() : null,
+        guestOf: m.guestOf && ["RYAN","MARSHA"].includes(m.guestOf.toUpperCase()) ? m.guestOf.toUpperCase() as any : null,
         tableNumber: typeof m.tableNumber === "number" ? m.tableNumber : m.tableNumber ? Number(m.tableNumber) : null,
         email: m.email ? String(m.email).trim() : null,
         phone: m.phone ? String(m.phone).trim() : null,

@@ -16,6 +16,11 @@ enum RsvpStatus {
   NO
 }
 
+enum GuestOf {
+  RYAN
+  MARSHA
+}
+
 model Group {
   id        String   @id @default(cuid())
   name      String?
@@ -28,6 +33,7 @@ model Guest {
   id                  String     @id @default(cuid())
   firstName           String
   lastName            String
+  suffix              String?    // Name suffix like "Jr.", "Sr.", "II", etc.
   title               String?    // Honorific like "Mr.", "Ms.", "Mrs.", etc.
   email               String?
   phone               String?
@@ -36,6 +42,7 @@ model Guest {
   foodSelection       String?
   dietaryRestrictions String?
   songRequests        String?
+  guestOf             GuestOf?   // Indicates whose guest (Ryan or Marsha)
   groupId             String?
   group               Group?     @relation(fields: [groupId], references: [id])
   nicknames           Nickname[]

@@ -11,8 +11,10 @@ interface MemberDraft {
   title?: string;
   firstName: string;
   lastName: string;
-  tableNumber?: number | "";
-  isChild?: boolean;
+  suffix?: string;
+  guestOf?: 'RYAN' | 'MARSHA' | '';
+  tableNumber?: number | ""; // kept for legacy but removed from entry UI
+  isChild?: boolean; // child checkbox restored
 }
 
 interface GroupItem {
@@ -23,6 +25,8 @@ interface GroupItem {
     title?: string | null;
     firstName: string;
     lastName: string;
+    suffix?: string | null; // new
+    guestOf?: 'RYAN' | 'MARSHA' | null;
     tableNumber?: number | null;
     rsvpStatus: "PENDING" | "YES" | "NO";
     foodSelection?: string | null;
@@ -36,10 +40,12 @@ export default function AdminDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [groupName, setGroupName] = useState("");
-  const [members, setMembers] = useState<MemberDraft[]>([{ title: "", firstName: "", lastName: "", tableNumber: "", isChild: false }]);
+  const [members, setMembers] = useState<MemberDraft[]>([{ title: "", firstName: "", lastName: "", suffix: "", guestOf: "", tableNumber: "", isChild: false }]);
+  // New: filter state for guestOf views
+  const [guestOfFilter, setGuestOfFilter] = useState<'ALL' | 'RYAN' | 'MARSHA'>('ALL');
   const resetForm = () => {
     setGroupName("");
-    setMembers([{ title: "", firstName: "", lastName: "", tableNumber: "", isChild: false }]);
+    setMembers([{ title: "", firstName: "", lastName: "", suffix: "", guestOf: "", tableNumber: "", isChild: false }]);
   };
 
   const loadGroups = async () => {
@@ -61,9 +67,21 @@ export default function AdminDashboard() {
     loadGroups();
   }, []);
 
-  // Aggregate counts for dashboard
+  // Derive filtered groups based on guestOfFilter
+  const filteredGroups = useMemo(() => {
+    if (guestOfFilter === 'ALL') return groups;
+    const target = guestOfFilter;
+    return groups
+      .map(g => ({
+        ...g,
+        guests: g.guests.filter(m => m.guestOf === target)
+      }))
+      .filter(g => g.guests.length > 0);
+  }, [groups, guestOfFilter]);
+
+  // Aggregate counts for dashboard (respect filter)
   const { totalGuests, yesCount, noCount, pendingCount, meals, childrenCount, childrenAttendingCount } = useMemo(() => {
-    const all = groups.flatMap((g) => g.guests || []);
+    const all = filteredGroups.flatMap((g) => g.guests || []);
     const total = all.length;
     let yes = 0, no = 0, pending = 0, kids = 0, kidsYes = 0;
     const mealCounts: Record<string, number> = { Chicken: 0, Beef: 0, Fish: 0, Vegetarian: 0, Unselected: 0 };
@@ -85,10 +103,10 @@ export default function AdminDashboard() {
       }
     }
     return { totalGuests: total, yesCount: yes, noCount: no, pendingCount: pending, meals: mealCounts, childrenCount: kids, childrenAttendingCount: kidsYes };
-  }, [groups]);
+  }, [filteredGroups]);
 
   // Add group entry form helpers
-  const addMemberRow = () => setMembers((prev) => [...prev, { title: "", firstName: "", lastName: "", tableNumber: "", isChild: false }]);
+  const addMemberRow = () => setMembers((prev) => [...prev, { title: "", firstName: "", lastName: "", suffix: "", guestOf: "", tableNumber: "", isChild: false }]);
   const removeMemberRow = (idx: number) => {
     setMembers((prev) => (prev.length > 1 ? prev.filter((_, i) => i !== idx) : prev));
   };
@@ -102,6 +120,8 @@ export default function AdminDashboard() {
         title: m.title?.trim() || undefined,
         firstName: m.firstName.trim(),
         lastName: m.lastName.trim(),
+        suffix: m.suffix?.trim() || undefined,
+        guestOf: m.guestOf ? m.guestOf : undefined,
         tableNumber: m.tableNumber === "" ? undefined : Number(m.tableNumber),
         isChild: !!m.isChild,
       }))
@@ -200,7 +220,7 @@ export default function AdminDashboard() {
     }
   };
 
-  const addGuestToGroup = async (groupId: string, draft: { title?: string; firstName: string; lastName: string; isChild?: boolean }) => {
+  const addGuestToGroup = async (groupId: string, draft: { title?: string; firstName: string; lastName: string; suffix?: string; guestOf?: 'RYAN' | 'MARSHA'; isChild?: boolean }) => {
     try {
       const res = await fetch("/api/guests", {
         method: "POST",
@@ -314,6 +334,23 @@ export default function AdminDashboard() {
         <h1 className="font-playfair text-2xl sm:text-3xl text-emerald-900 font-semibold">Admin Dashboard</h1>
       </div>
       <main className="px-2 sm:px-6 pb-16">
+        {/* Filter Toggle */}
+        <div className="mb-6 flex flex-wrap items-center gap-2">
+          <span className="text-xs uppercase tracking-wide text-gray-600">View:</span>
+          {([
+            { key: 'ALL', label: 'All Guests' },
+            { key: 'RYAN', label: "Ryan's Guests" },
+            { key: 'MARSHA', label: "Marsha's Guests" },
+          ] as const).map(opt => (
+            <button
+              key={opt.key}
+              onClick={() => setGuestOfFilter(opt.key)}
+              className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${guestOfFilter === opt.key ? 'bg-emerald-600 border-emerald-600 text-white shadow' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
         <section className="mb-8">
           <div className="grid grid-cols-4 gap-2 sm:gap-4">
             <div className="rounded-lg border bg-white/90 p-3 sm:p-4 shadow-sm">
@@ -359,14 +396,11 @@ export default function AdminDashboard() {
             />
             <div className="space-y-3">
               {members.map((m, idx) => (
-                <div key={idx} className="grid grid-cols-12 gap-2 items-end">
-                  <div className="col-span-2">
+                <div key={idx} className="relative grid grid-cols-12 gap-2 items-end pb-6">
+                  {/* Title */}
+                  <div className="col-span-2 flex flex-col">
                     <label className="block text-sm mb-1 text-gray-700 font-medium">Title</label>
-                    <select
-                      value={m.title ?? ""}
-                      onChange={(e) => updateMember(idx, { title: e.target.value })}
-                      className="w-full border rounded-md px-3 py-2"
-                    >
+                    <select value={m.title ?? ""} onChange={(e) => updateMember(idx, { title: e.target.value })} className="w-full border rounded-md px-3 py-2 h-11">
                       <option value="">—</option>
                       <option>Mr.</option>
                       <option>Mrs.</option>
@@ -376,37 +410,62 @@ export default function AdminDashboard() {
                       <option>Prof.</option>
                       <option>Mx.</option>
                     </select>
-                    <label className="mt-2 inline-flex items-center gap-2 text-sm text-gray-700">
-                      <input type="checkbox" checked={!!m.isChild} onChange={(e) => updateMember(idx, { isChild: e.target.checked })} /> Child
-                    </label>
                   </div>
-                  <div className="col-span-4">
+                  {/* First Name */}
+                  <div className="col-span-3 flex flex-col">
                     <label className="block text-sm mb-1 text-gray-700 font-medium">First Name</label>
                     <input
                       value={m.firstName}
                       onChange={(e) => updateMember(idx, { firstName: e.target.value })}
-                      className="w-full border rounded-md px-3 py-2"
+                      className="w-full border rounded-md px-3 py-2 h-11"
                     />
                   </div>
-                  <div className="col-span-4">
+                  {/* Last Name */}
+                  <div className="col-span-3 flex flex-col">
                     <label className="block text-sm mb-1 text-gray-700 font-medium">Last Name</label>
                     <input
                       value={m.lastName}
                       onChange={(e) => updateMember(idx, { lastName: e.target.value })}
-                      className="w-full border rounded-md px-3 py-2"
+                      className="w-full border rounded-md px-3 py-2 h-11"
                     />
                   </div>
-                  <div className="col-span-2">
-                    <label className="block text-sm mb-1 text-gray-700 font-medium">Table</label>
-                    <input
-                      type="number"
-                      min={1}
-                      value={m.tableNumber ?? ""}
-                      onChange={(e) => updateMember(idx, { tableNumber: e.target.value === "" ? "" : Number(e.target.value) })}
-                      className="w-full border rounded-md px-3 py-2"
-                    />
+                  {/* Suffix */}
+                  <div className="col-span-2 flex flex-col">
+                    <label className="block text-sm mb-1 text-gray-700 font-medium">Suffix</label>
+                    <select
+                      value={m.suffix ?? ""}
+                      onChange={(e) => updateMember(idx, { suffix: e.target.value })}
+                      className="w-full border rounded-md px-3 py-2 h-11"
+                    >
+                      <option value="">—</option>
+                      <option>Jr.</option>
+                      <option>Sr.</option>
+                      <option>II</option>
+                      <option>III</option>
+                      <option>IV</option>
+                      <option>V</option>
+                    </select>
                   </div>
-                  <div className="col-span-12 flex justify-end gap-2">
+                  {/* Guest Of */}
+                  <div className="col-span-2 flex flex-col">
+                    <label className="block text-sm mb-1 text-gray-700 font-medium">Guest Of</label>
+                    <select
+                      value={m.guestOf ?? ''} onChange={(e) => updateMember(idx, { guestOf: e.target.value as any })}
+                      className="w-full border rounded-md px-3 py-2 h-11"
+                    >
+                      <option value="">—</option>
+                      <option value="RYAN">Ryan</option>
+                      <option value="MARSHA">Marsha</option>
+                    </select>
+                  </div>
+                  {/* Child checkbox lower-left */}
+                  <div className="absolute left-0 bottom-0">
+                    <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+                      <input type="checkbox" checked={!!m.isChild} onChange={(e) => updateMember(idx, { isChild: e.target.checked })} /> Child
+                    </label>
+                  </div>
+                  {/* Action buttons */}
+                  <div className="col-span-12 flex justify-end gap-2 mt-2">
                     <button type="button" onClick={() => addMemberRow()} className="text-sm px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md flex items-center gap-1">
                       <PlusIcon className="h-4 w-4" /> Add Guest
                     </button>
@@ -429,10 +488,10 @@ export default function AdminDashboard() {
             <p>Loading…</p>
           ) : error ? (
             <p className="text-red-600">{error}</p>
-          ) : groups.length === 0 ? (
+          ) : filteredGroups.length === 0 ? (
             <p className="text-gray-600">No entries yet.</p>
           ) : (
-            groups.map((g) => (
+            filteredGroups.map((g) => (
               <div key={g.id} className="border rounded-lg bg-white p-4 w-full">
                 <div className="flex items-start justify-between">
                   <div>
@@ -450,7 +509,7 @@ export default function AdminDashboard() {
                 </div>
                 {g.guests.length > 0 && (
                   <p className="mt-2 text-sm text-gray-700 break-words">
-                    {g.guests.map((m) => `${m.title ? m.title + " " : ""}${m.firstName} ${m.lastName}`).join(", ")}
+                    {g.guests.map((m) => `${m.title ? m.title + ' ' : ''}${m.firstName} ${m.lastName}${m.suffix? ' '+m.suffix:''}${m.guestOf? ' ('+(m.guestOf==='RYAN'?'Ryan':'Marsha')+')':''}`).join(", ")}
                   </p>
                 )}
                 {expanded[g.id] && (
@@ -498,6 +557,12 @@ export default function AdminDashboard() {
                               </select>
                             </div>
                             <div className="flex flex-col">
+                              <label className="block text-sm text-black mb-1">Suffix</label>
+                              <select value={m.suffix ?? ""} onChange={(e) => updateGuest(m.id, { suffix: e.target.value || null })} className="w-full border rounded px-3 py-2 text-black h-10">
+                                <option value="">—</option><option>Jr.</option><option>Sr.</option><option>II</option><option>III</option><option>IV</option><option>V</option>
+                              </select>
+                            </div>
+                            <div className="flex flex-col">
                               <label className="block text-sm text-black mb-1">First Name</label>
                               <input value={m.firstName} onChange={(e) => updateGuest(m.id, { firstName: e.target.value })} className="w-full border rounded px-3 py-2 text-black h-10" />
                             </div>
@@ -523,9 +588,7 @@ export default function AdminDashboard() {
                             </div>
                           </div>
                           <div className="absolute -bottom-8 left-0">
-                            <label className="inline-flex items-center gap-2 text-sm text-black">
-                              <input type="checkbox" checked={!!m.isChild} onChange={(e) => updateGuest(m.id, { isChild: e.target.checked })} className="rounded border-gray-300" /> Child
-                            </label>
+                            {/* Child checkbox removed from inline editing per new suffix field request */}
                           </div>
                         </div>
                         <div className="mt-12 flex justify-end">
@@ -547,32 +610,48 @@ export default function AdminDashboard() {
 }
 
 // Inline component for quickly adding a guest under a group
-function AddGuestInline({ onAdd }: { onAdd: (d: { title?: string; firstName: string; lastName: string; isChild?: boolean }) => void }) {
+function AddGuestInline({ onAdd }: { onAdd: (d: { title?: string; firstName: string; lastName: string; suffix?: string; guestOf?: 'RYAN' | 'MARSHA'; isChild?: boolean }) => void }) {
   const [title, setTitle] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [suffix, setSuffix] = useState("");
+  const [guestOf, setGuestOf] = useState<'' | 'RYAN' | 'MARSHA'>('');
   const [isChild, setIsChild] = useState(false);
   return (
-    <div className="grid grid-cols-1 md:grid-cols-8 gap-2 items-end">
-      <div>
+    <div className="relative grid grid-cols-12 gap-2 items-end pb-6">
+      <div className="col-span-2 flex flex-col">
         <label className="block text-sm text-black mb-1">Title</label>
-        <select value={title} onChange={(e) => setTitle(e.target.value)} className="w-full border rounded px-2 py-2 text-black">
+        <select value={title} onChange={(e) => setTitle(e.target.value)} className="w-full border rounded px-2 py-2 h-11 text-black">
           <option value="">—</option><option>Mr.</option><option>Mrs.</option><option>Ms.</option><option>Miss</option><option>Dr.</option><option>Prof.</option><option>Mx.</option>
         </select>
-        <label className="mt-2 inline-flex items-center gap-2 text-sm text-black">
+      </div>
+      <div className="col-span-3 flex flex-col">
+        <label className="block text-sm text-black mb-1">First Name</label>
+        <input value={firstName} onChange={(e) => setFirstName(e.target.value)} className="w-full border rounded px-2 py-2 h-11 text-black" />
+      </div>
+      <div className="col-span-3 flex flex-col">
+        <label className="block text-sm text-black mb-1">Last Name</label>
+        <input value={lastName} onChange={(e) => setLastName(e.target.value)} className="w-full border rounded px-2 py-2 h-11 text-black" />
+      </div>
+      <div className="col-span-2 flex flex-col">
+        <label className="block text-sm text-black mb-1">Suffix</label>
+        <select value={suffix} onChange={(e) => setSuffix(e.target.value)} className="w-full border rounded px-2 py-2 h-11 text-black">
+          <option value="">—</option><option>Jr.</option><option>Sr.</option><option>II</option><option>III</option><option>IV</option><option>V</option>
+        </select>
+      </div>
+      <div className="col-span-2 flex flex-col">
+        <label className="block text-sm text-black mb-1">Guest Of</label>
+        <select value={guestOf} onChange={(e) => setGuestOf(e.target.value as any)} className="w-full border rounded px-2 py-2 h-11 text-black">
+          <option value="">—</option><option value="RYAN">Ryan</option><option value="MARSHA">Marsha</option>
+        </select>
+      </div>
+      <div className="absolute left-0 bottom-0">
+        <label className="inline-flex items-center gap-2 text-sm text-black">
           <input type="checkbox" checked={isChild} onChange={(e) => setIsChild(e.target.checked)} /> Child
         </label>
       </div>
-      <div className="md:col-span-3">
-        <label className="block text-sm text-black mb-1">First Name</label>
-        <input value={firstName} onChange={(e) => setFirstName(e.target.value)} className="w-full border rounded px-2 py-2 text-black" />
-      </div>
-      <div className="md:col-span-3">
-        <label className="block text-sm text-black mb-1">Last Name</label>
-        <input value={lastName} onChange={(e) => setLastName(e.target.value)} className="w-full border rounded px-2 py-2 text-black" />
-      </div>
-      <div className="md:col-span-1">
-        <button onClick={() => { const fn = firstName.trim(); const ln = lastName.trim(); if (!fn || !ln) return; onAdd({ title: title || undefined, firstName: fn, lastName: ln, isChild }); setTitle(""); setFirstName(""); setLastName(""); setIsChild(false); }} className="w-full px-3 py-2 rounded bg-black text-white">Add</button>
+      <div className="col-span-12 flex justify-end mt-2">
+        <button onClick={() => { const fn = firstName.trim(); const ln = lastName.trim(); if (!fn || !ln) return; onAdd({ title: title || undefined, firstName: fn, lastName: ln, suffix: suffix || undefined, guestOf: guestOf || undefined, isChild }); setTitle(""); setFirstName(""); setLastName(""); setSuffix(""); setGuestOf(''); setIsChild(false); }} className="px-4 py-2 rounded bg-black text-white">Add</button>
       </div>
     </div>
   );
