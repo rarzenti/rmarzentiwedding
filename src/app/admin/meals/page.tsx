@@ -1,8 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import * as XLSX from "xlsx";
+
+// Meal keys constant (file scope to avoid unnecessary dependencies in hooks)
+const mealKeys = ["Chicken","Beef","Fish","Vegetarian","Unselected"] as const;
+
+type MealKey = typeof mealKeys[number];
 
 interface Guest {
   id: string;
@@ -16,17 +21,24 @@ interface Guest {
   isChild?: boolean;
 }
 
+// Outer export wrapped in Suspense to satisfy useSearchParams requirement during prerender
 export default function MealsPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-rose-50 via-emerald-50 to-sky-50"><p className="font-cormorant text-emerald-700">Loading meals...</p></div>}>
+      <MealsPageInner />
+    </Suspense>
+  );
+}
+
+function MealsPageInner() {
   const [guests, setGuests] = useState<Guest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedTable, setSelectedTable] = useState<string>("ALL");
   const [modalTable, setModalTable] = useState<number | "UNASSIGNED" | null>(null);
-  const [modalType, setModalType] = useState<"MEALS" | "ALLERGIES" | null>(null);
   const params = useSearchParams();
   const router = useRouter();
   const view = (params.get("view") as "orders" | "allergies" | null) || "orders";
-
   const [tableNicknames, setTableNicknames] = useState<Record<number, string | null>>({});
 
   const loadGuests = async () => {
@@ -56,9 +68,6 @@ export default function MealsPage() {
 
   const confirmed = useMemo(() => guests.filter(g => g.rsvpStatus === "YES"), [guests]);
   const pending = useMemo(() => guests.filter(g => g.rsvpStatus === "PENDING"), [guests]);
-
-  const mealKeys = ["Chicken","Beef","Fish","Vegetarian","Unselected"] as const;
-  type MealKey = typeof mealKeys[number];
 
   const overallMealCounts = useMemo(() => {
     const counts: Record<MealKey, number> = { Chicken:0, Beef:0, Fish:0, Vegetarian:0, Unselected:0 };
@@ -96,11 +105,10 @@ export default function MealsPage() {
     return tables.filter(([t]) => t === num);
   }, [tables, selectedTable]);
 
-  const openTableModal = (tableId: number | "UNASSIGNED", type: "MEALS" | "ALLERGIES" = "MEALS") => {
+  const openTableModal = (tableId: number | "UNASSIGNED") => {
     setModalTable(tableId);
-    setModalType(type);
   };
-  const closeModal = () => { setModalTable(null); setModalType(null); };
+  const closeModal = () => { setModalTable(null); };
 
   const modalGuests = useMemo(() => {
     if (modalTable === null) return [];
@@ -146,6 +154,7 @@ export default function MealsPage() {
   };
 
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-rose-50 via-emerald-50 to-sky-50"><p className="font-cormorant text-emerald-700">Loading meals...</p></div>;
+  if (error) return <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-rose-50 via-emerald-50 to-sky-50"><p className="font-cormorant text-red-600">{error}</p></div>;
 
   return (
     <div className="relative left-1/2 right-1/2 ml-[-50vw] mr-[-50vw] w-screen min-h-screen bg-gradient-to-br from-rose-50 via-emerald-50 to-sky-50 py-24 px-3 sm:px-6">
