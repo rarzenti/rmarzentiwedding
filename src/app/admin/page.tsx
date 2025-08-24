@@ -82,7 +82,7 @@ export default function AdminDashboard() {
   }, []);
 
   // Aggregate counts for dashboard - filtered by current view and search
-  const { totalGuests, yesCount, noCount, pendingCount, meals, childrenCount, childrenAttendingCount } = useMemo(() => {
+  const { totalGuests, yesCount, pendingCount, childrenCount, childrenAttendingCount } = useMemo(() => {
     // First filter groups based on guestOfFilter and search
     let filteredGroups = groups;
     
@@ -103,26 +103,19 @@ export default function AdminDashboard() {
     
     const all = filteredGroups.flatMap((g) => g.guests || []);
     const total = all.length;
-    let yes = 0, no = 0, pending = 0, kids = 0, kidsYes = 0;
-    const mealCounts: Record<string, number> = { Chicken: 0, Beef: 0, Fish: 0, Vegetarian: 0, Unselected: 0 };
+    let yes = 0, pending = 0, kids = 0, kidsYes = 0;
     for (const m of all) {
       if (m.rsvpStatus === "YES") yes++;
-      else if (m.rsvpStatus === "NO") no++;
-      else pending++;
+      else if (m.rsvpStatus === "NO") {
+        // Count NO responses but don't need separate variable
+      } else pending++;
 
       if (m.isChild) {
         kids++;
         if (m.rsvpStatus === "YES") kidsYes++;
       }
-
-      if (m.rsvpStatus === "YES") {
-        const key = m.foodSelection && ["Chicken", "Beef", "Fish", "Vegetarian"].includes(m.foodSelection)
-          ? m.foodSelection
-          : "Unselected";
-        mealCounts[key] = (mealCounts[key] || 0) + 1;
-      }
     }
-    return { totalGuests: total, yesCount: yes, noCount: no, pendingCount: pending, meals: mealCounts, childrenCount: kids, childrenAttendingCount: kidsYes };
+    return { totalGuests: total, yesCount: yes, pendingCount: pending, childrenCount: kids, childrenAttendingCount: kidsYes };
   }, [groups, guestOfFilter, searchFilter]);
 
     // Add group entry form helpers
@@ -153,7 +146,7 @@ export default function AdminDashboard() {
     }
 
     try {
-      const contact: any = {};
+      const contact: Record<string, string | null> = {};
       if (contactEmail.trim()) contact.email = contactEmail.trim();
       if (contactPhone.trim()) contact.phone = contactPhone.trim();
       if (addr.street1 || addr.city || addr.state || addr.postalCode || addr.street2) {
@@ -195,7 +188,6 @@ export default function AdminDashboard() {
 
   // Admin editing helpers
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
-  const toggleExpanded = (id: string) => setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
 
   // Draft group names for rename UI
   const [groupNameDraft, setGroupNameDraft] = useState<Record<string, string>>({});
@@ -451,7 +443,7 @@ export default function AdminDashboard() {
                     <label className="block text-sm mb-1 text-gray-700 font-medium">Guest Of</label>
                     <select
                       value={m.guestOf ?? ''} 
-                      onChange={(e) => updateMember(idx, { guestOf: e.target.value as any })}
+                      onChange={(e) => updateMember(idx, { guestOf: e.target.value as 'RYAN' | 'MARSHA' | '' })}
                       className="border rounded text-black px-3 py-2"
                     >
                       <option value="">—</option>
@@ -517,11 +509,9 @@ export default function AdminDashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredGroups.map(g=>{
-                    const line = [g.street1, g.street2, [g.city, g.state].filter(Boolean).join(', '), g.postalCode].filter(Boolean).join(' | ');
-                    return (
+                  {filteredGroups.map(g => (
                       <AddressRow key={g.id} group={g} onUpdate={(patch)=>setGroups(prev=>prev.map(gr=>gr.id===g.id?{...gr,...patch}:gr))} />
-                    )})}
+                    ))}
                 </tbody>
               </table>
             </div>
@@ -784,7 +774,7 @@ function AddGuestInline({ onAdd }: { onAdd: (d: { title?: string; firstName: str
       </div>
       <div className="col-span-2 flex flex-col">
         <label className="block text-sm text-black mb-1">Guest Of</label>
-        <select value={guestOf} onChange={(e) => setGuestOf(e.target.value as any)} className="w-full border rounded px-2 py-2 h-11 text-black">
+        <select value={guestOf} onChange={(e) => setGuestOf(e.target.value as '' | 'RYAN' | 'MARSHA')} className="w-full border rounded px-2 py-2 h-11 text-black">
           <option value="">—</option><option value="RYAN">Ryan</option><option value="MARSHA">Marsha</option>
         </select>
       </div>
@@ -812,14 +802,17 @@ function AddressRow({ group, onUpdate }: { group: GroupItem; onUpdate: (p: Parti
     postalCode: group.postalCode || '',
   });
   const save = async () => {
-    const contact: any = { ...form };
+    const contact: Record<string, string> = { ...form };
     try {
       const res = await fetch('/api/groups', { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ id: group.id, contact }) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to update');
       onUpdate(data.group);
       setEditing(false);
-    } catch(e:any){ alert(e.message||'Failed'); }
+    } catch(e: unknown){ 
+      const errorMessage = e instanceof Error ? e.message : 'Failed';
+      alert(errorMessage);
+    }
   };
   return (
         <tr className="border-t align-top">

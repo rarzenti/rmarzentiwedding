@@ -6,8 +6,6 @@ import {
   CheckCircleIcon, 
   XCircleIcon, 
   ClockIcon,
-  MagnifyingGlassIcon,
-  FunnelIcon,
   ArrowLeftIcon
 } from "@heroicons/react/24/outline";
 import * as XLSX from "xlsx";
@@ -54,8 +52,8 @@ export default function GuestDataPage() {
   const [dietaryFilter, setDietaryFilter] = useState("");
   const [tableFilter, setTableFilter] = useState<string>("ALL");
   const [typeFilter, setTypeFilter] = useState<string>("ALL");
-  // Track which filter UI is open
-  const [activeFilter, setActiveFilter] = useState<string | null>(null);
+  // Track which filter UI is open - currently unused but kept for future features
+  // const [activeFilter, setActiveFilter] = useState<string | null>(null);
 
   const loadGuests = async () => {
     try {
@@ -76,8 +74,8 @@ export default function GuestDataPage() {
     loadGuests();
   }, []);
 
-  // Gather unique food options and table numbers for dropdowns
-  const foodOptions = Array.from(new Set(guests.map(g => g.foodSelection).filter(Boolean))) as string[];
+  // Gather unique table numbers for dropdowns
+  // const foodOptions = Array.from(new Set(guests.map(g => g.foodSelection).filter(Boolean))) as string[];
   const tableOptions = Array.from(new Set(guests.map(g => g.tableNumber).filter(Boolean))) as number[];
 
   // Filter guests based on all column filters

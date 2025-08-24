@@ -32,10 +32,10 @@ export default function RSVPPage() {
   const [respondingGuestId, setRespondingGuestId] = useState<string | null>(null);
   const [step, setStep] = useState<'guest' | 'email' | 'confirm' | 'done'>('guest');
   const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
+  const [_submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showEmailOptIn, setShowEmailOptIn] = useState(false);
-  const [emailOptIn, setEmailOptIn] = useState(false);
+  const [_emailOptIn, setEmailOptIn] = useState(false);
   const [respondingGuestError, setRespondingGuestError] = useState(false);
 
   // Debounced search
@@ -52,7 +52,7 @@ export default function RSVPPage() {
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Search failed");
         setResults(data.groups || []);
-      } catch (e) {
+      } catch {
         setResults([]);
       } finally {
         setLoading(false);
@@ -92,10 +92,6 @@ export default function RSVPPage() {
     const g = selected.guests[currentGuestIdx];
     return g && (g.rsvpStatus === 'YES' || g.rsvpStatus === 'NO');
   }, [selected, currentGuestIdx]);
-
-  const canSubmit = useMemo(() => {
-    return !!selected && selected.guests.every((g) => g.rsvpStatus === "YES" || g.rsvpStatus === "NO");
-  }, [selected]);
 
   const onSubmit = async () => {
     if (!selected) return;
@@ -180,7 +176,7 @@ export default function RSVPPage() {
                           <div className="flex-1">
                             <p className="font-medium text-black">{g.name || "Your Group"}</p>
                             <div className="text-sm text-gray-700 mt-1">
-                              {g.guests.map((m, idx) => (
+                              {g.guests.map((m) => (
                                 <div key={m.id} className="flex items-center gap-2 mb-1">
                                   <span>{m.title ? `${m.title} ` : ""}{m.firstName} {m.lastName}</span>
                                   {m.rsvpStatus === 'YES' && (

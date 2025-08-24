@@ -100,7 +100,7 @@ export async function POST(req: Request) {
 export async function PATCH(req: Request) {
   try {
     const body = await req.json();
-    const { id, groupName, sendConfirmation, respondingGuestId, ...data } = body ?? {};
+    const { id, groupName, sendConfirmation, ...data } = body ?? {};
     if (!id || typeof id !== "string") {
       return NextResponse.json({ error: "id is required" }, { status: 400 });
     }

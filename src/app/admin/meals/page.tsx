@@ -120,13 +120,13 @@ function MealsPageInner() {
   const guestsWithAllergies = useMemo(() => confirmed.filter(g => (g.dietaryRestrictions||"").trim().length>0), [confirmed]);
 
   const exportOrders = () => {
-    const data = tables.map(([table, list]) => {
+    const data: Array<{ Table: string | number } & Record<MealKey, number>> = tables.map(([table, list]) => {
       const counts = tableMealBreakdown(list);
       return { Table: table, ...counts };
     });
     if (unassigned.length) {
       const counts = tableMealBreakdown(unassigned);
-      data.push({ Table: "Unassigned", ...counts } as any);
+      data.push({ Table: "Unassigned", ...counts });
     }
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();

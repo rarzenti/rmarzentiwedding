@@ -16,8 +16,8 @@ interface GroupItem {
 
 export default function SeatingPlannerPage() {
   const [groups, setGroups] = useState<GroupItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [_loading, setLoading] = useState(true);
+  const [_error, setError] = useState<string | null>(null);
   const [selectedTable, setSelectedTable] = useState<number>(1);
   const CAPACITY = 10;
 
