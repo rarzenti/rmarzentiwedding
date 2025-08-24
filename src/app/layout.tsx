@@ -52,7 +52,7 @@ export default function RootLayout({
       >
         <Navbar />
         <div className="pt-16 min-h-screen bg-gradient-to-br from-rose-50 via-emerald-50 to-sky-50">
-          <div className="mx-auto w-full max-w-3xl px-2 sm:px-4 md:px-6 lg:px-8">{children}</div>
+          {children}
         </div>
       </body>
     </html>

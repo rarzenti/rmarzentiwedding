@@ -107,7 +107,7 @@ export default function Hero() {
                 alt={image.alt}
                 fill
                 priority={index === currentSlide || index === (currentSlide + 1) % images.length}
-                className={`object-cover ${image.src === '/images/psuWedding.JPG' ? 'object-[center_30%]' : image.src === '/images/nyc.JPG' ? 'object-[center_15%]' : image.src === '/images/MR-Engagement-18.jpg' ? 'object-[center_40%]' : image.src === '/images/hiking.JPG' ? 'object-[25%_center] md:object-[center_15%]' : image.src === '/images/nycWedding.JPG' ? 'object-[center_10%]' : 'object-center'}`}
+                className={`object-cover ${image.src === '/images/psuWedding.JPG' ? 'object-[center_30%]' : image.src === '/images/nyc.JPG' ? 'object-[center_15%]' : image.src === '/images/MR-Engagement-18.jpg' ? 'object-[center_40%]' : image.src === '/images/hiking.JPG' ? 'object-[25%_center] md:object-[center_20%]' : image.src === '/images/nycWedding.JPG' ? 'object-[center_10%]' : 'object-center'}`}
                 quality={95}
                 sizes="100vw"
               />

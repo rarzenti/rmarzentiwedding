@@ -22,27 +22,33 @@ enum GuestOf {
 }
 
 model Group {
-  id        String   @id @default(cuid())
-  name      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  guests    Guest[]
+  id          String   @id @default(cuid())
+  name        String?
+  email       String?
+  phone       String?
+  street1     String?
+  street2     String?
+  city        String?
+  state       String?
+  postalCode  String?
+  country     String?  @default("USA")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  guests      Guest[]
 }
 
 model Guest {
   id                  String     @id @default(cuid())
   firstName           String
   lastName            String
-  suffix              String?    // Name suffix like "Jr.", "Sr.", "II", etc.
   title               String?    // Honorific like "Mr.", "Ms.", "Mrs.", etc.
-  email               String?
-  phone               String?
+  suffix              String?
+  guestOf             GuestOf?
   tableNumber         Int?
   rsvpStatus          RsvpStatus @default(PENDING)
   foodSelection       String?
   dietaryRestrictions String?
   songRequests        String?
-  guestOf             GuestOf?   // Indicates whose guest (Ryan or Marsha)
   groupId             String?
   group               Group?     @relation(fields: [groupId], references: [id])
   nicknames           Nickname[]

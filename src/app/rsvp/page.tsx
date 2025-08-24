@@ -2,20 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-// Mobile detection hook
-function useIsMobile() {
-  const [isMobile, setIsMobile] = useState(false);
-  
-  useEffect(() => {
-    const checkDevice = () => setIsMobile(window.innerWidth < 768);
-    checkDevice();
-    window.addEventListener('resize', checkDevice);
-    return () => window.removeEventListener('resize', checkDevice);
-  }, []);
-  
-  return isMobile;
-}
-
 type RsvpStatus = "YES" | "NO";
 
 interface RsvpGuest {
@@ -37,7 +23,6 @@ interface RsvpGroup {
 }
 
 export default function RSVPPage() {
-  const isMobile = useIsMobile();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<RsvpGroup[]>([]);
   const [loading, setLoading] = useState(false);
@@ -151,9 +136,8 @@ export default function RSVPPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-rose-50 via-emerald-50 to-sky-50">
-      <main className="mx-auto max-w-3xl px-6 py-16">
-        <h1 className="font-playfair text-5xl mb-8 text-black">RSVP</h1>
+    <main className="mx-auto max-w-3xl px-6 py-4">
+      <h1 className="font-playfair text-5xl mb-8 text-black">RSVP</h1>
 
         {!selected ? (
           // ...existing code for search...
@@ -192,7 +176,7 @@ export default function RSVPPage() {
                         className="w-full text-left rounded-xl border bg-white p-4 shadow-sm hover:shadow-md transition hover:border-gray-400"
                         onClick={() => onSelectGroup(g)}
                       >
-                        <div className={`flex ${isMobile ? 'flex-col' : 'justify-between items-start'}`}>
+                        <div className="flex justify-between items-start">
                           <div className="flex-1">
                             <p className="font-medium text-black">{g.name || "Your Group"}</p>
                             <div className="text-sm text-gray-700 mt-1">
@@ -217,31 +201,29 @@ export default function RSVPPage() {
                               ))}
                             </div>
                           </div>
-                          {!isMobile && (
-                            <div className="ml-4 text-right text-sm">
-                              <div className="bg-gray-50 rounded-lg p-3 min-w-[120px]">
-                                <div className="font-medium text-gray-800 mb-2">Status</div>
-                                {confirmedCount > 0 && (
-                                  <div className="text-green-600 flex items-center justify-between">
-                                    <span>✓ Attending:</span>
-                                    <span className="font-semibold">{confirmedCount}</span>
-                                  </div>
-                                )}
-                                {notAttendingCount > 0 && (
-                                  <div className="text-red-600 flex items-center justify-between">
-                                    <span>✗ Not attending:</span>
-                                    <span className="font-semibold">{notAttendingCount}</span>
-                                  </div>
-                                )}
-                                {pendingCount > 0 && (
-                                  <div className="text-gray-500 flex items-center justify-between">
-                                    <span>⋯ Pending:</span>
-                                    <span className="font-semibold">{pendingCount}</span>
-                                  </div>
-                                )}
-                              </div>
+                          <div className="ml-4 text-right text-sm">
+                            <div className="bg-gray-50 rounded-lg p-3 min-w-[120px]">
+                              <div className="font-medium text-gray-800 mb-2">Status</div>
+                              {confirmedCount > 0 && (
+                                <div className="text-green-600 flex items-center justify-between">
+                                  <span>✓ Attending:</span>
+                                  <span className="font-semibold">{confirmedCount}</span>
+                                </div>
+                              )}
+                              {notAttendingCount > 0 && (
+                                <div className="text-red-600 flex items-center justify-between">
+                                  <span>✗ Not attending:</span>
+                                  <span className="font-semibold">{notAttendingCount}</span>
+                                </div>
+                              )}
+                              {pendingCount > 0 && (
+                                <div className="text-gray-500 flex items-center justify-between">
+                                  <span>⋯ Pending:</span>
+                                  <span className="font-semibold">{pendingCount}</span>
+                                </div>
+                              )}
                             </div>
-                          )}
+                          </div>
                         </div>
                       </button>
                     </li>
@@ -497,6 +479,5 @@ export default function RSVPPage() {
           </section>
         )}
       </main>
-    </div>
   );
 }

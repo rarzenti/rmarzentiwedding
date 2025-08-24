@@ -46,15 +46,35 @@ export default function AllergyReportPage() {
     loadGuests();
   }, []);
 
-  // Filter guests with dietary restrictions - only those who entered something in the dietary restrictions field
+  // Filter guests with food allergies (dietary restrictions in notesToCouple field contains allergy keywords)
   const guestsWithAllergies = guests.filter(guest => {
     if (guest.rsvpStatus !== "YES") return false;
     
-    // Only check dietary restrictions field, not food selection
-    const dietaryText = (guest.dietaryRestrictions || "").trim();
+    // Check both dietaryRestrictions and foodSelection for allergy indicators
+    const dietaryText = (guest.dietaryRestrictions || "").toLowerCase();
+    const foodText = (guest.foodSelection || "").toLowerCase();
+    const combinedText = `${dietaryText} ${foodText}`.toLowerCase();
     
-    // Return true if they have any text in dietary restrictions
-    return dietaryText.length > 0;
+    return (
+      combinedText.includes("allergy") ||
+      combinedText.includes("allergic") ||
+      combinedText.includes("dietary") ||
+      combinedText.includes("restriction") ||
+      combinedText.includes("gluten") ||
+      combinedText.includes("dairy") ||
+      combinedText.includes("nut") ||
+      combinedText.includes("shellfish") ||
+      combinedText.includes("vegetarian") ||
+      combinedText.includes("vegan") ||
+      combinedText.includes("celiac") ||
+      combinedText.includes("lactose") ||
+      combinedText.includes("kosher") ||
+      combinedText.includes("halal") ||
+      combinedText.includes("no ") ||
+      combinedText.includes("avoid") ||
+      combinedText.includes("cannot") ||
+      combinedText.includes("intolerance")
+    );
   });
 
   // Export to Excel
@@ -175,10 +195,10 @@ export default function AllergyReportPage() {
               <tr>
                 <td colSpan={7} className="px-6 py-12 text-center">
                   <div className="text-emerald-600 font-cormorant text-lg">
-                    {guests.length === 0 ? "No guests found" : "No guests with dietary restrictions found"}
+                    {guests.length === 0 ? "No guests found" : "No guests with food allergies or dietary restrictions found"}
                   </div>
                   <div className="text-emerald-500 font-cormorant text-sm mt-2">
-                    Only confirmed (YES) guests who entered dietary restriction notes are shown
+                    Only confirmed (YES) guests with food selections containing allergy-related keywords are shown
                   </div>
                 </td>
               </tr>
@@ -246,10 +266,10 @@ export default function AllergyReportPage() {
       {guestsWithAllergies.length > 0 && (
         <div className="mt-6 text-center px-4">
           <p className="text-emerald-700 font-cormorant">
-            Found {guestsWithAllergies.length} guest{guestsWithAllergies.length !== 1 ? 's' : ''} with dietary restrictions
+            Found {guestsWithAllergies.length} guest{guestsWithAllergies.length !== 1 ? 's' : ''} with food allergies or dietary restrictions
           </p>
           <p className="text-emerald-600 font-cormorant text-sm mt-1">
-            Showing only confirmed guests who entered dietary restriction notes during RSVP
+            Keywords searched: allergy, allergic, dietary, restriction, gluten, dairy, nut, shellfish, vegetarian, vegan, celiac, lactose, kosher, halal, avoid, intolerance
           </p>
         </div>
       )}

@@ -5,81 +5,51 @@ import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
-// Admin Dropdown Component
+
+// AdminDropdown component for admin hamburger menu
 interface AdminDropdownProps {
   adminLinks: NavLink[];
   pathname: string | null;
   onLogout: () => void;
 }
 function AdminDropdown({ adminLinks, pathname, onLogout }: AdminDropdownProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
-      if (!target.closest('[data-dropdown]')) {
-        setIsOpen(false);
-      }
-    };
-    
-    if (isOpen) {
-      document.addEventListener('click', handleClickOutside);
-      return () => document.removeEventListener('click', handleClickOutside);
-    }
-  }, [isOpen]);
-
-  const isAnyAdminPageActive = adminLinks.some(link => 
-    pathname === link.href || pathname?.startsWith(link.href + "/")
-  );
-
+  const [open, setOpen] = useState(false);
   return (
-    <div className="relative" data-dropdown>
+    <div className="relative">
       <button
-        onClick={() => setIsOpen(!isOpen)}
-        className={`flex items-center gap-1 font-cormorant uppercase tracking-[0.12em] text-[15px] px-3 py-1.5 rounded-md transition-colors ${
-          isAnyAdminPageActive
-            ? "text-gray-900 bg-gray-100"
-            : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
-        }`}
+        className="p-2 rounded focus:outline-none focus:ring-2 focus:ring-black/20"
+        aria-label="Open admin menu"
+        onClick={() => setOpen((v) => !v)}
       >
-        Admin
-        <svg 
-          className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} 
-          fill="none" 
-          stroke="currentColor" 
-          viewBox="0 0 24 24"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
+        <span className="block w-5 h-0.5 bg-gray-900 mb-1" />
+        <span className="block w-5 h-0.5 bg-gray-900 mb-1" />
+        <span className="block w-5 h-0.5 bg-gray-900" />
       </button>
-      
-      {isOpen && (
-        <div className="absolute top-full right-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 min-w-48 z-50">
-          {adminLinks.map((link) => {
-            const active = pathname === link.href || pathname?.startsWith(link.href + "/");
+      {open && (
+        <div className="absolute top-10 right-0 bg-white rounded-lg shadow-lg border z-50 py-2 min-w-[180px] animate-fade-in">
+          {adminLinks.map((l) => {
+            const active = pathname === l.href || pathname?.startsWith(l.href + "/");
             return (
               <Link
-                key={link.href}
-                href={link.href}
-                onClick={() => setIsOpen(false)}
-                className={`block px-4 py-2 text-sm transition-colors ${
-                  active
-                    ? "text-gray-900 bg-gray-100"
-                    : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
-                }`}
+                key={l.href}
+                href={l.href}
+                aria-current={active ? "page" : undefined}
+                className={
+                  (active
+                    ? "text-gray-900 bg-gray-50 "
+                    : "text-gray-700 hover:text-gray-900 hover:bg-gray-50 ") +
+                  "block px-4 py-2 text-sm font-medium"
+                }
+                onClick={() => setOpen(false)}
               >
-                {link.label}
+                {l.label}
               </Link>
             );
           })}
-          <div className="border-t border-gray-200 my-1" />
+          <div className="border-t my-1" />
           <button
-            onClick={() => {
-              onLogout();
-              setIsOpen(false);
-            }}
-            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition-colors"
+            onClick={() => { onLogout(); setOpen(false); }}
+            className="block w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50"
           >
             Logout
           </button>
@@ -88,7 +58,6 @@ function AdminDropdown({ adminLinks, pathname, onLogout }: AdminDropdownProps) {
     </div>
   );
 }
-
 
 // MobileNav component for hamburger menu
 interface NavLink {
@@ -104,8 +73,6 @@ interface MobileNavProps {
 }
 function MobileNav({ links, adminLinks, adminMode, pathname, onLogout }: MobileNavProps) {
   const [open, setOpen] = useState(false);
-  const [adminOpen, setAdminOpen] = useState(false);
-  
   return (
     <>
       <button
@@ -126,72 +93,53 @@ function MobileNav({ links, adminLinks, adminMode, pathname, onLogout }: MobileN
                 key={l.href}
                 href={l.href}
                 aria-current={active ? "page" : undefined}
-                className={`font-cormorant uppercase tracking-[0.12em] text-[17px] py-2 px-3 rounded-md transition-colors ${
-                  active
-                    ? "text-gray-900 bg-gray-100"
-                    : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
-                }`}
-                onClick={() => setOpen(false)
+                className={
+                  (active
+                    ? "text-gray-900 underline decoration-2 underline-offset-8 "
+                    : "text-gray-700 hover:text-gray-900 ") +
+                  "font-cormorant uppercase tracking-[0.12em] text-[17px] py-1"
                 }
+                onClick={() => setOpen(false)}
               >
                 {l.label}
               </Link>
             );
           })}
-          
           {adminMode && (
             <>
               <div className="border-t my-2" />
-              <button
-                onClick={() => setAdminOpen(!adminOpen)}
-                className="flex items-center justify-between font-cormorant uppercase tracking-[0.12em] text-[17px] py-2 px-3 rounded-md text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition-colors"
-              >
-                Admin
-                <svg 
-                  className={`w-4 h-4 transition-transform ${adminOpen ? 'rotate-180' : ''}`} 
-                  fill="none" 
-                  stroke="currentColor" 
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-              
-              {adminOpen && (
-                <div className="ml-4 flex flex-col gap-2">
-                  {adminLinks.map((l) => {
-                    const active = pathname === l.href || pathname?.startsWith(l.href + "/");
-                    return (
-                      <Link
-                        key={l.href}
-                        href={l.href}
-                        aria-current={active ? "page" : undefined}
-                        className={`font-cormorant uppercase tracking-[0.12em] text-[15px] py-2 px-3 rounded-md transition-colors ${
-                          active
-                            ? "text-gray-900 bg-gray-100"
-                            : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
-                        }`}
-                        onClick={() => setOpen(false)}
-                      >
-                        {l.label}
-                      </Link>
-                    );
-                  })}
-                  <button
-                    onClick={() => { onLogout(); setOpen(false); }}
-                    className="text-left font-cormorant uppercase tracking-[0.12em] text-[15px] py-2 px-3 rounded-md text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition-colors"
+              {adminLinks.map((l) => {
+                const active = pathname === l.href || pathname?.startsWith(l.href + "/");
+                return (
+                  <Link
+                    key={l.href}
+                    href={l.href}
+                    aria-current={active ? "page" : undefined}
+                    className={
+                      (active
+                        ? "text-gray-900 underline decoration-2 underline-offset-8 "
+                        : "text-gray-700 hover:text-gray-900 ") +
+                      "font-cormorant uppercase tracking-[0.12em] text-[17px] py-1"
+                    }
+                    onClick={() => setOpen(false)}
                   >
-                    Logout
-                  </button>
-                </div>
-              )}
+                    {l.label}
+                  </Link>
+                );
+              })}
+              <button
+                onClick={() => { onLogout(); setOpen(false); }}
+                className="mt-2 rounded border px-3 py-1.5 text-[15px] text-gray-800 hover:bg-gray-900 hover:text-white w-full text-left"
+                title="Logout"
+              >
+                Logout
+              </button>
             </>
           )}
-          
           {!adminMode && (
             <Link
               href="/admin/login"
-              className="font-cormorant uppercase tracking-[0.12em] text-[17px] py-2 px-3 rounded-md text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition-colors"
+              className="font-cormorant uppercase tracking-[0.12em] text-[17px] text-gray-700 hover:text-gray-900 py-1"
               onClick={() => setOpen(false)}
             >
               Admin
@@ -249,7 +197,6 @@ export default function Navbar() {
     { href: "/about", label: "About Us" },
     { href: "/details", label: "Wedding Details" },
     { href: "/rsvp", label: "RSVP" },
-    { href: "/seating", label: "Seating Chart" },
     { href: "/photos", label: "Photos" },
   ];
 
@@ -272,10 +219,10 @@ export default function Navbar() {
   return (
     <header className="fixed top-0 inset-x-0 z-50 bg-white/80 backdrop-blur border-b border-black/5">
       <nav className="w-full px-2 sm:px-4 md:px-8 h-16 flex items-center justify-between">
-        <Link href="/" className="font-dancing text-2xl sm:text-3xl md:text-4xl tracking-wide text-gray-900 whitespace-nowrap">
+        <Link href="/" className="font-dancing text-2xl sm:text-3xl md:text-4xl tracking-wide text-gray-900">
           Ryan & Marsha
         </Link>
-        <div className="hidden xl:flex items-center gap-6">
+        <div className="hidden xl:flex items-center gap-6 xl:gap-8">
           {links.map((l) => {
             const active = pathname === l.href || pathname?.startsWith(l.href + "/");
             return (
@@ -283,27 +230,33 @@ export default function Navbar() {
                 key={l.href}
                 href={l.href}
                 aria-current={active ? "page" : undefined}
-                className={`font-cormorant uppercase tracking-[0.12em] text-[15px] px-3 py-1.5 rounded-md transition-colors ${
-                  active
-                    ? "text-gray-900 bg-gray-100"
-                    : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
-                }`}
+                className={
+                  (active
+                    ? "text-gray-900 underline decoration-2 underline-offset-8 "
+                    : "text-gray-700 hover:text-gray-900 ") +
+                  "font-cormorant uppercase tracking-[0.12em] text-[15px]"
+                }
               >
                 {l.label}
               </Link>
             );
           })}
 
-          {adminMode ? (
-            <AdminDropdown
-              adminLinks={adminLinks}
-              pathname={pathname}
-              onLogout={handleLogout}
-            />
-          ) : (
+          {adminMode && (
+            <>
+              <span className="mx-2 h-5 w-px bg-gray-300" aria-hidden="true" />
+              <AdminDropdown 
+                adminLinks={adminLinks} 
+                pathname={pathname} 
+                onLogout={handleLogout}
+              />
+            </>
+          )}
+
+          {!adminMode && (
             <Link
               href="/admin/login"
-              className="font-cormorant uppercase tracking-[0.12em] text-[15px] px-3 py-1.5 rounded-md text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition-colors"
+              className="font-cormorant uppercase tracking-[0.12em] text-[15px] text-gray-700 hover:text-gray-900"
             >
               Admin
             </Link>
