@@ -11,7 +11,11 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "import-guests": "tsx scripts/import-guests.ts",
+    "update-guests": "tsx scripts/update-guests.ts",
+    "reset-import-guests": "tsx scripts/reset-and-import-guests.ts",
+    "extract-addresses": "tsx scripts/extract-group-addresses.ts"
   },
   "dependencies": {
     "@heroicons/react": "^2.1.5",
@@ -33,6 +37,7 @@
     "eslint-config-next": "15.4.6",
     "prisma": "^6.13.0",
     "tailwindcss": "^4",
+    "tsx": "^4.20.5",
     "typescript": "^5"
   }
 }

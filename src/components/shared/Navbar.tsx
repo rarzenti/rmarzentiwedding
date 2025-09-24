@@ -194,7 +194,6 @@ export default function Navbar() {
   }, [pathname]);
 
   const links = [
-    { href: "/about", label: "About Us" },
     { href: "/details", label: "Wedding Details" },
     { href: "/rsvp", label: "RSVP" },
     { href: "/photos", label: "Photos" },

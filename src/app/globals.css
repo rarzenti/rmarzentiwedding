@@ -2,7 +2,10 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #000000;
+  --text-primary: #111827;    /* Darker primary text (gray-900) */
+  --text-secondary: #374151;  /* Darker secondary text (gray-700) */
+  --text-muted: #4b5563;      /* Darker muted text (gray-600) */
 }
 
 /* Font helpers to match component classes */
@@ -10,10 +13,18 @@
 .font-cormorant { font-family: var(--font-cormorant), serif; }
 .font-dancing { font-family: var(--font-dancing), cursive; }
 
+/* High contrast text utilities */
+.text-high-contrast { color: var(--text-primary) !important; }
+.text-secondary-contrast { color: var(--text-secondary) !important; }
+.text-muted-contrast { color: var(--text-muted) !important; }
+
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
-    --foreground: #ededed;
+    --foreground: #ffffff;
+    --text-primary: #f9fafb;    /* Light primary text for dark mode */
+    --text-secondary: #e5e7eb;  /* Light secondary text for dark mode */
+    --text-muted: #d1d5db;      /* Light muted text for dark mode */
   }
 }
 
@@ -23,4 +34,45 @@ body {
   font-family: Arial, Helvetica, sans-serif;
   overscroll-behavior-y: none;
   -webkit-tap-highlight-color: transparent;
+}
+
+/* Enhanced contrast overrides for better readability */
+.text-gray-700 {
+  color: #374151 !important; /* Darker than default gray-700 */
+}
+
+.text-gray-600 {
+  color: #4b5563 !important; /* Darker than default gray-600 */
+}
+
+.text-gray-800 {
+  color: #1f2937 !important; /* Darker than default gray-800 */
+}
+
+.text-gray-900 {
+  color: #111827 !important; /* Ensure maximum contrast */
+}
+
+/* Ensure links have high contrast */
+a {
+  color: var(--text-primary);
+}
+
+a:hover {
+  color: #000000;
+}
+
+/* Button contrast improvements */
+button {
+  font-weight: 500;
+}
+
+/* Form input contrast */
+input, textarea, select {
+  color: var(--text-primary);
+  border-color: #6b7280; /* Darker border for better visibility */
+}
+
+input::placeholder, textarea::placeholder {
+  color: #6b7280; /* Darker placeholder text */
 }
