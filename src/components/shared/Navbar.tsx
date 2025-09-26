@@ -196,7 +196,8 @@ export default function Navbar() {
   const links = [
     { href: "/details", label: "Wedding Details" },
     { href: "/rsvp", label: "RSVP" },
-    { href: "/photos", label: "Photos" },
+    { href: "/accommodations", label: "Accommodations" },
+    { href: "/registry", label: "Registry" },
   ];
 
   const adminLinks = [
