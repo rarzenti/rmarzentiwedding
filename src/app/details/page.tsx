@@ -106,7 +106,7 @@ export default function DetailsPage() {
             <div className="w-20 h-0.5 bg-gradient-to-r from-transparent via-green-400 to-transparent mx-auto"></div>
           </div>
           <div className="text-center space-y-4">
-            <h3 className="font-playfair text-2xl font-light text-gray-900 tracking-wide">Jackson's Restaurant & Bar</h3>
+            <h3 className="font-playfair text-2xl font-light text-gray-900 tracking-wide">Jackson&apos;s Restaurant & Bar</h3>
             <p className="text-gray-700 font-light leading-relaxed">1000 Corporate Drive, Canonsburg, Pennsylvania 15317<br /><span className="italic text-sm">(Next to the Hilton)</span></p>
             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 inline-block">
               <p className="font-playfair text-3xl font-light text-gray-900 mb-2">10:00 PM - 1:30 AM</p>
@@ -146,7 +146,7 @@ export default function DetailsPage() {
             <h2 className="font-playfair text-4xl font-light text-gray-800 mb-4 tracking-wide">Between Ceremony & Reception</h2>
             <div className="w-24 h-0.5 bg-gradient-to-r from-transparent via-gray-400 to-transparent mx-auto mb-6"></div>
             <p className="text-gray-600 font-light leading-relaxed max-w-2xl mx-auto">
-              There's a 3-hour gap between the ceremony and reception. Here are some great options to explore in the area:
+              There&apos;s a 3-hour gap between the ceremony and reception. Here are some great options to explore in the area:
             </p>
           </div>
           
@@ -203,9 +203,9 @@ export default function DetailsPage() {
             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
               <h3 className="font-playfair text-xl font-light text-gray-800 mb-4 tracking-wide">Near Reception Venue</h3>
               <div className="text-gray-600 font-light text-sm leading-relaxed">
-                <strong className="text-gray-800">Jackson's Restaurant & Bar</strong> is conveniently located right next to the Hilton Garden Inn Southpointe. 
+                <strong className="text-gray-800">Jackson&apos;s Restaurant & Bar</strong> is conveniently located right next to the Hilton Garden Inn Southpointe. 
                 <br /><br />
-                <span className="text-xs italic">It's a perfect spot to grab drinks or a bite before the reception begins!</span>
+                <span className="text-xs italic">It&apos;s a perfect spot to grab drinks or a bite before the reception begins!</span>
               </div>
             </div>
           </div>

@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 export default function AccommodationsPage() {
   return (
     <main className="mx-auto max-w-4xl px-4 py-16">
@@ -15,9 +17,11 @@ export default function AccommodationsPage() {
           {/* Hotel Image */}
           <div className="mb-10">
             <div className="relative">
-              <img
+              <Image
                 src="/images/hgi.jpg"
                 alt="Hilton Garden Inn Southpointe"
+                width={1024}
+                height={683}
                 className="w-full h-80 object-cover rounded-xl shadow-xl"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent rounded-xl"></div>
@@ -103,7 +107,7 @@ export default function AccommodationsPage() {
           <div className="w-12 h-0.5 bg-gradient-to-r from-transparent via-gray-400 to-transparent mx-auto mb-4"></div>
         </div>
         <p className="text-gray-600 font-light mb-4">
-          We're here to help with any accommodation questions
+          We&apos;re here to help with any accommodation questions
         </p>
         <p className="text-gray-500 font-light italic">
           Hotel direct: (724) 743-5000 • Reference: Ryan & Marsha Wedding

@@ -12,7 +12,7 @@ export default function RegistryPage() {
           <h2 className="font-playfair text-3xl font-light text-gray-800 mb-6 tracking-wide">Coming Soon</h2>
           <div className="w-20 h-0.5 bg-gradient-to-r from-transparent via-gray-400 to-transparent mx-auto mb-8"></div>
           <p className="text-gray-600 font-light leading-relaxed max-w-2xl mx-auto mb-8">
-            We're currently curating our wedding registry with items that will help us start our new life together. 
+            We&apos;re currently curating our wedding registry with items that will help us start our new life together. 
             Check back soon for our wish list!
           </p>
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 inline-block">
