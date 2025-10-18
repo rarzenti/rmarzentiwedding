@@ -132,7 +132,7 @@ export default function DetailsPage() {
               <div className="w-16 h-0.5 bg-gradient-to-r from-transparent via-blue-400 to-transparent mx-auto mb-4"></div>
               <p className="text-blue-800 font-light leading-relaxed max-w-2xl">
                 Please note that you will need to drive from the ceremony to the reception venue. 
-                The drive is approximately 30 minutes. We recommend carpooling with other guests if possible!
+                The drive is approximately 30 minutes. Uber and Lyft services are widely available.
               </p>
             </div>
           </div>
@@ -146,7 +146,7 @@ export default function DetailsPage() {
             <h2 className="font-playfair text-4xl font-light text-gray-800 mb-4 tracking-wide">Between Ceremony & Reception</h2>
             <div className="w-24 h-0.5 bg-gradient-to-r from-transparent via-gray-400 to-transparent mx-auto mb-6"></div>
             <p className="text-gray-600 font-light leading-relaxed max-w-2xl mx-auto">
-              There&apos;s a 3-hour gap between the ceremony and reception. Here are some great options to explore in the area:
+              There&apos;s a 2-hour gap between the end of the ceremony and reception. Here are some great options to explore in the area:
             </p>
           </div>
           
@@ -221,7 +221,7 @@ export default function DetailsPage() {
         <div className="bg-gradient-to-br from-gray-50 to-white p-8 rounded-2xl shadow-lg border border-gray-100">
           <div className="bg-gray-100 rounded-xl overflow-hidden mb-8" style={{ height: '500px' }}>
             <iframe
-              src="https://www.google.com/maps/embed?pb=!1m28!1m12!1m3!1d98467.67901766938!2d-80.35449435820312!3d40.383671800000004!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!4m13!3e0!4m5!1s0x8834f20c32b85095%3A0x7c2f6df1bdbb5f2a!2s225%2037th%20St%2C%20Pittsburgh%2C%20PA%2015201!3m2!1d40.465939999999996!2d-79.96113!4m5!1s0x8834c7d8e1a5e40b%3A0x4e5b9c7e8f9a0b1c!2s1000%20Corporate%20Dr%2C%20Canonsburg%2C%20PA%2015317!3m2!1d40.282838!2d-80.171637!5e0!3m2!1sen!2sus!4v1699999999999!5m2!1sen!2sus"
+              src="https://www.google.com/maps/embed?pb=!1m28!1m12!1m3!1d50000!2d-80.0668!3d40.3746!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!4m13!3e0!4m5!1s0x8834f20c32b85095%3A0x7c2f6df1bdbb5f2a!2s225%2037th%20St%2C%20Pittsburgh%2C%20PA%2015201%2C%20USA!3m2!1d40.4659399!2d-79.96113!4m5!1s0x8834c7d8e1a5e40b%3A0x4e5b9c7e8f9a0b1c!2s1000%20Corporate%20Dr%2C%20Canonsburg%2C%20PA%2015317%2C%20USA!3m2!1d40.282838!2d-80.171637!5e0!3m2!1sen!2sus!4v1703000000000!5m2!1sen!2sus"
               width="100%"
               height="100%"
               style={{ border: 0 }}
