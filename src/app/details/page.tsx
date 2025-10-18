@@ -179,8 +179,14 @@ export default function DetailsPage() {
                 <div className="flex items-start">
                   <span className="w-1.5 h-1.5 bg-gray-400 rounded-full mr-3 mt-2 flex-shrink-0"></span>
                   <div>
-                    <strong className="text-gray-800">Espresso A Mano</strong><br />
-                    <span className="text-xs">Get a quick boost with a shot of espresso</span>
+                    <strong className="text-gray-800">William Penn Tavern</strong><br />
+                    <span className="text-xs">Relaxed pub sure to have some sports on</span>
+                  </div>
+                </div>
+                <div className="flex items-start">
+                  <span className="w-1.5 h-1.5 bg-gray-400 rounded-full mr-3 mt-2 flex-shrink-0"></span>
+                  <div>
+                    <strong className="text-gray-800">Many other coffee shops, restaurants, bars and more!</strong><br />
                   </div>
                 </div>
               </div>
