@@ -90,7 +90,7 @@ export default function DetailsPage() {
               </div>
               <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                 <p className="font-playfair text-xl font-light text-gray-900 mb-1">Reception</p>
-                <p className="text-gray-600 font-light">6:00 - 10:00 PM</p>
+                <p className="text-gray-600 font-light">6:00 - 10:30 PM</p>
               </div>
             </div>
             <p className="text-gray-600 font-light italic">Dinner and dancing to follow cocktails</p>
