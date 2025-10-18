@@ -35,10 +35,10 @@ export default function RSVPPage() {
   const [respondingGuestId, setRespondingGuestId] = useState<string | null>(null);
   const [step, setStep] = useState<'guest' | 'email' | 'confirm' | 'done'>('guest');
   const [submitting, setSubmitting] = useState(false);
-  const [_submitted, setSubmitted] = useState(false);
+  const [, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showEmailOptIn, setShowEmailOptIn] = useState(false);
-  const [_emailOptIn, setEmailOptIn] = useState(false);
+  const [, setEmailOptIn] = useState(false);
   const [respondingGuestError, setRespondingGuestError] = useState(false);
 
   // Debounced search

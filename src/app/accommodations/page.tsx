@@ -114,7 +114,7 @@ export default function AccommodationsPage() {
           We&apos;re here to help with any accommodation questions
         </p>
         <p className="text-gray-500 font-light italic">
-          Ryan & Marsha's Email: rmarzentiwedding@gmail.com
+          Ryan & Marsha&apos;s Email: rmarzentiwedding@gmail.com
         <br />
           or call hotel directly at: (724) 743-5000
         </p>
