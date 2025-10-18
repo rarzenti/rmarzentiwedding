@@ -21,7 +21,7 @@ END:VEVENT
 BEGIN:VEVENT
 UID:reception-${Date.now()}@ryanmarshawedding.com
 DTSTART:20260516T170000
-DTEND:20260516T230000
+DTEND:20260516T223000
 SUMMARY:Ryan & Marsha Wedding Reception
 DESCRIPTION:Wedding reception with cocktails\\, dinner\\, and dancing for Ryan & Marsha. Cocktail hour begins at 5:00 PM.
 LOCATION:Hilton Garden Inn Southpointe\\n1000 Corporate Drive\\nCanonsburg\\, PA 15317\\nUnited States
