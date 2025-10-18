@@ -2,6 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+// Feature flag - set to true to enable RSVP functionality after New Year
+const RSVP_ENABLED = false;
+
 type RsvpStatus = "YES" | "NO";
 
 interface RsvpGuest {
@@ -130,6 +133,29 @@ export default function RSVPPage() {
       setSubmitting(false);
     }
   };
+
+  // Early return for "coming soon" message when RSVP is not enabled
+  if (!RSVP_ENABLED) {
+    return (
+      <main className="mx-auto max-w-4xl px-4 py-16">
+        <div className="text-center mb-16">
+          <h1 className="font-playfair text-5xl font-light text-gray-900 mb-4 tracking-wide">RSVP</h1>
+          <div className="w-24 h-0.5 bg-gradient-to-r from-transparent via-gray-400 to-transparent mx-auto"></div>
+        </div>
+        
+        {/* Coming Soon Section */}
+        <div className="text-center">
+          <div className="bg-gradient-to-br from-gray-50 to-white p-12 rounded-2xl shadow-lg border border-gray-100">
+            <h2 className="font-playfair text-3xl font-light text-gray-800 mb-6 tracking-wide">Coming Soon</h2>
+            <div className="w-20 h-0.5 bg-gradient-to-r from-transparent via-gray-400 to-transparent mx-auto mb-8"></div>
+            <p className="text-gray-600 font-light leading-relaxed max-w-2xl mx-auto mb-8">
+              RSVP will be available after invitations are sent out.
+            </p>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-4">

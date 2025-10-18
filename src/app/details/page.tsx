@@ -109,7 +109,7 @@ export default function DetailsPage() {
             <h3 className="font-playfair text-2xl font-light text-gray-900 tracking-wide">Jackson&apos;s Restaurant & Bar</h3>
             <p className="text-gray-700 font-light leading-relaxed">1000 Corporate Drive, Canonsburg, Pennsylvania 15317<br /><span className="italic text-sm">(Next to the Hilton)</span></p>
             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 inline-block">
-              <p className="font-playfair text-3xl font-light text-gray-900 mb-2">10:00 PM - 1:30 AM</p>
+              <p className="font-playfair text-2xl sm:text-3xl font-light text-gray-900 mb-2 whitespace-nowrap">10:00 PM - 1:30 AM</p>
               <p className="text-gray-600 font-light italic">Keep the celebration going!<br />Join us for drinks and more fun right next door.</p>
             </div>
           </div>
@@ -265,6 +265,7 @@ export default function DetailsPage() {
           </div>
         </div>
       </div>
+            
 
     </main>
   );

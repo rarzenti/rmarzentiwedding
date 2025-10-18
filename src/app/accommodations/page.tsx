@@ -41,7 +41,7 @@ export default function AccommodationsPage() {
             <div className="text-center md:text-left">
               <h3 className="font-playfair text-2xl font-light text-gray-800 mb-6 tracking-wide">Amenities</h3>
               <div className="text-gray-700 space-y-2">
-                <p className="flex items-center justify-center md:justify-start"><span className="w-2 h-2 bg-gray-400 rounded-full mr-3"></span>Indoor heated pool & fitness center</p>
+                <p className="flex items-center justify-center md:justify-start"><span className="w-2 h-2 bg-gray-400 rounded-full mr-3"></span>Indoor pool & fitness center</p>
                 <p className="flex items-center justify-center md:justify-start"><span className="w-2 h-2 bg-gray-400 rounded-full mr-3"></span>Complimentary WiFi & parking</p>
                 <p className="flex items-center justify-center md:justify-start"><span className="w-2 h-2 bg-gray-400 rounded-full mr-3"></span>On-site restaurant & room service</p>
                 <p className="flex items-center justify-center md:justify-start"><span className="w-2 h-2 bg-gray-400 rounded-full mr-3"></span>In-room microwave & refrigerator</p>
@@ -55,7 +55,7 @@ export default function AccommodationsPage() {
               <h3 className="font-playfair text-3xl font-light text-gray-800 mb-4 tracking-wide">Group Reservations</h3>
               <div className="w-16 h-0.5 bg-gradient-to-r from-transparent via-gray-400 to-transparent mx-auto mb-4"></div>
               <p className="text-gray-600 mb-2 font-light">Special rates available for wedding guests</p>
-              <p className="text-gray-500 text-sm italic">Please book by April 16, 2026</p>
+              <p className="text-gray-500 text-sm italic">Please book by April 10, 2026</p>
             </div>
             
             <div className="text-center">
@@ -67,6 +67,9 @@ export default function AccommodationsPage() {
               >
                 Reserve Your Room
               </a>
+              <p className="text-gray-500 text-xs mt-4 italic">
+                Note: Default reservation is for Friday & Saturday nights. Please adjust dates as needed.
+              </p>
             </div>
           </div>
         </div>
@@ -88,13 +91,14 @@ export default function AccommodationsPage() {
               <p className="text-gray-500 text-sm mt-2">(724) 271-3330</p>
             </div>
             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-300">
-              <h4 className="font-playfair text-xl font-light text-gray-800 mb-2 tracking-wide">Homewood Suites by Hilton</h4>
-              <p className="text-gray-600 font-light italic mb-1">Pittsburgh-Southpointe</p>
+              <h4 className="font-playfair text-xl font-light text-gray-800 mb-2 tracking-wide">Homewood Suites by Hilton Pittsburgh Southpointe</h4>
               <p className="text-gray-600 font-light">3000 Horizon Vue Drive, Canonsburg, Pennsylvania 15317</p>
+              <p className="text-gray-500 text-sm mt-2">(724) 745-4663</p>
             </div>
             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-300">
-              <h4 className="font-playfair text-xl font-light text-gray-800 mb-2 tracking-wide">Holiday Inn Express</h4>
+              <h4 className="font-playfair text-xl font-light text-gray-800 mb-2 tracking-wide">Holiday Inn Express Pittsburgh Southpointe</h4>
               <p className="text-gray-600 font-light">4000 Horizon Vue Drive, Canonsburg, Pennsylvania 15317</p>
+              <p className="text-gray-500 text-sm mt-2">(724) 743-4300</p>
             </div>
           </div>
         </div>
@@ -110,7 +114,9 @@ export default function AccommodationsPage() {
           We&apos;re here to help with any accommodation questions
         </p>
         <p className="text-gray-500 font-light italic">
-          Hotel direct: (724) 743-5000 • Reference: Ryan & Marsha Wedding
+          Ryan & Marsha's Email: rmarzentiwedding@gmail.com
+        <br />
+          or call hotel directly at: (724) 743-5000
         </p>
       </div>
     </main>

@@ -15,9 +15,6 @@ export default function RegistryPage() {
             We&apos;re currently curating our wedding registry with items that will help us start our new life together. 
             Check back soon for our wish list!
           </p>
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 inline-block">
-            <p className="text-gray-500 font-light italic">Registry details will be available soon</p>
-          </div>
         </div>
       </div>
     </main>

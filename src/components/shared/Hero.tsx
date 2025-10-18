@@ -52,7 +52,7 @@ export default function Hero() {
   });
 
   useEffect(() => {
-    const weddingDate = new Date('2026-05-16T00:00:00');
+    const weddingDate = new Date('2026-05-16T14:00:00');
     
     const calculateTimeLeft = () => {
       const difference = +weddingDate - +new Date();
