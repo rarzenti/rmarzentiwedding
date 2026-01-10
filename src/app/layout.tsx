@@ -65,6 +65,7 @@ export default function RootLayout({
         <div className="pt-16 min-h-screen bg-gradient-to-br from-rose-50 via-emerald-50 to-sky-50">
           {children}
         </div>
+        <Analytics />
       </body>
     </html>
   );
