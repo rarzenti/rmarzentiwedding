@@ -161,7 +161,7 @@ export async function PATCH(req: Request) {
         // Get the latest group data with updated email
         const grp = await prisma.group.findUnique({
           where: { id: updated.group.id },
-          select: { email: true, name: true, guests: { select: { id: true, firstName: true, lastName: true, rsvpStatus: true, foodSelection: true } } }
+          select: { email: true, name: true, guests: { select: { id: true, firstName: true, lastName: true, rsvpStatus: true, foodSelection: true, dietaryRestrictions: true } } }
         });
         
         const targetEmail = email?.trim() || grp?.email;
@@ -235,13 +235,34 @@ export async function PATCH(req: Request) {
             
             // Meal selections (only if someone is attending)
             if (yesGuests.length > 0) {
+              // Helper function to get full meal description
+              const getMealDescription = (selection: string | null) => {
+                switch (selection) {
+                  case 'Chicken': return 'Herb Crusted Chicken w/ Boursin Cheese Sauce';
+                  case 'Beef': return 'Grilled NY Strip Steak w/ Wild Mushrooms & Bourbon Glaze';
+                  case 'Vegetarian': return 'Vegan/Vegetarian';
+                  case 'Kids Meal': return 'Kids Meal';
+                  default: return selection || 'Not selected';
+                }
+              };
+              
               message += `<div style="background: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0;">`;
               message += `<p style="color: #1f2937; font-weight: bold; margin-bottom: 10px;">Meal Selections:</p>`;
               yesGuests.forEach(g => {
-                const displayName = g.id === updated.id ? 'You' : `${g.firstName} ${g.lastName}`;
-                message += `<p style="color: #374151; margin: 5px 0;">${displayName}: <strong>${g.foodSelection || 'Not selected'}</strong></p>`;
+                message += `<p style="color: #374151; margin: 5px 0;">${g.firstName} ${g.lastName}: <strong>${getMealDescription(g.foodSelection)}</strong></p>`;
               });
               message += `</div>`;
+              
+              // Dietary restrictions (if any guest has them)
+              const guestsWithRestrictions = yesGuests.filter(g => g.dietaryRestrictions && g.dietaryRestrictions.trim());
+              if (guestsWithRestrictions.length > 0) {
+                message += `<div style="background: #fef2f2; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ef4444;">`;
+                message += `<p style="color: #991b1b; font-weight: bold; margin-bottom: 10px;">Dietary Restrictions:</p>`;
+                guestsWithRestrictions.forEach(g => {
+                  message += `<p style="color: #7f1d1d; margin: 5px 0;">${g.firstName} ${g.lastName}: <em>${g.dietaryRestrictions}</em></p>`;
+                });
+                message += `</div>`;
+              }
               
               // Event details (only show if attending)
               message += `<hr style="border: none; border-top: 1px solid #e5e7eb; margin: 25px 0;" />`;

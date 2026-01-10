@@ -40,6 +40,7 @@ export default function RSVPPage() {
   const [showEmailOptIn, setShowEmailOptIn] = useState(false);
   const [, setEmailOptIn] = useState(false);
   const [respondingGuestError, setRespondingGuestError] = useState(false);
+  const [showMealModal, setShowMealModal] = useState(false);
 
   // Debounced search
   useEffect(() => {
@@ -177,20 +178,7 @@ export default function RSVPPage() {
             {!loading && results.length > 0 && (
               <ul className="mt-4 grid gap-3">
                 {results.map((g) => {
-                  const confirmedCount = g.guests.filter(guest => guest.rsvpStatus === 'YES').length;
-                  const notAttendingCount = g.guests.filter(guest => guest.rsvpStatus === 'NO').length;
-                  const pendingCount = g.guests.filter(guest => guest.rsvpStatus === 'PENDING' || !guest.rsvpStatus).length;
-                  
-                  const getMealSymbol = (foodSelection: string | null | undefined) => {
-                    switch (foodSelection) {
-                      case 'Chicken': return '🐔';
-                      case 'Beef': return '🥩';
-                      case 'Fish': return '🐟';
-                      case 'Vegetarian': return '🥗';
-                      case 'Kids Meal': return '🍗';
-                      default: return '';
-                    }
-                  };
+                  const hasResponded = g.guests.some(guest => guest.rsvpStatus === 'YES' || guest.rsvpStatus === 'NO');
 
                   return (
                     <li key={g.id}>
@@ -198,53 +186,25 @@ export default function RSVPPage() {
                         className="w-full text-left rounded-xl border bg-white p-4 shadow-sm hover:shadow-md transition hover:border-gray-400"
                         onClick={() => onSelectGroup(g)}
                       >
-                        <div className="flex justify-between items-start">
+                        <div className="flex justify-between items-center">
                           <div className="flex-1">
-                            <p className="font-medium text-black">{g.name || "Your Group"}</p>
-                            <div className="text-sm text-gray-700 mt-1">
-                              {g.guests.map((m) => (
-                                <div key={m.id} className="flex items-center gap-2 mb-1">
-                                  <span>{m.title ? `${m.title} ` : ""}{m.firstName} {m.lastName}</span>
-                                  {m.rsvpStatus === 'YES' && (
-                                    <span className="inline-flex items-center gap-1">
-                                      <span className="text-green-600 font-semibold">✓ Attending</span>
-                                      {getMealSymbol(m.foodSelection) && (
-                                        <span title={m.foodSelection || 'Meal selected'}>{getMealSymbol(m.foodSelection)}</span>
-                                      )}
-                                    </span>
-                                  )}
-                                  {m.rsvpStatus === 'NO' && (
-                                    <span className="text-red-600 font-semibold">✗ Not attending</span>
-                                  )}
-                                  {(m.rsvpStatus === 'PENDING' || !m.rsvpStatus) && (
-                                    <span className="text-gray-500">⋯ Pending</span>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
+                            <p className="font-medium text-black text-lg">{g.name || "Your Group"}</p>
+                            <p className="text-sm text-gray-600 mt-1">
+                              {g.guests.map(m => m.firstName).join(', ')}
+                            </p>
                           </div>
-                          <div className="ml-4 text-right text-sm">
-                            <div className="bg-gray-50 rounded-lg p-3 min-w-[120px]">
-                              <div className="font-medium text-gray-800 mb-2">Status</div>
-                              {confirmedCount > 0 && (
-                                <div className="text-green-600 flex items-center justify-between">
-                                  <span>✓ Attending:</span>
-                                  <span className="font-semibold">{confirmedCount}</span>
-                                </div>
-                              )}
-                              {notAttendingCount > 0 && (
-                                <div className="text-red-600 flex items-center justify-between">
-                                  <span>✗ Not attending:</span>
-                                  <span className="font-semibold">{notAttendingCount}</span>
-                                </div>
-                              )}
-                              {pendingCount > 0 && (
-                                <div className="text-gray-500 flex items-center justify-between">
-                                  <span>⋯ Pending:</span>
-                                  <span className="font-semibold">{pendingCount}</span>
-                                </div>
-                              )}
-                            </div>
+                          <div className="ml-4 text-right">
+                            {hasResponded ? (
+                              <span className="inline-flex items-center gap-1.5 text-sm text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full">
+                                <span>✓</span>
+                                <span>Responded</span>
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1.5 text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+                                <span>⋯</span>
+                                <span>Not yet responded</span>
+                              </span>
+                            )}
                           </div>
                         </div>
                       </button>
@@ -307,25 +267,39 @@ export default function RSVPPage() {
                           <div className="w-full rounded-xl border-2 border-gray-300 px-4 py-3 bg-gray-50 text-gray-900 font-medium">
                             Kids Meal — Crisp Herb-Encrusted Chicken Fillets with Golden Pommes Frites and a Savory Tomato Reduction (chicken tenders and fries)
                           </div>
+                        ) : selected.guests[currentGuestIdx].rsvpStatus === 'NO' ? (
+                          <div className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 bg-gray-100 text-gray-500 italic">
+                            Guest not attending
+                          </div>
                         ) : (
-                          <>
-                            <select
-                              value={selected.guests[currentGuestIdx].foodSelection ?? ""}
-                              onChange={(e) => updateLocal(selected.guests[currentGuestIdx].id, { foodSelection: e.target.value || null })}
-                              className={`form-select ${selected.guests[currentGuestIdx].rsvpStatus === 'NO' ? 'bg-gray-100 !text-gray-500 cursor-not-allowed' : ''}`}
-                              disabled={selected.guests[currentGuestIdx].rsvpStatus === 'NO'}
-                              required={selected.guests[currentGuestIdx].rsvpStatus === 'YES'}
-                            >
-                              <option value="">Select an option</option>
-                              <option value="Chicken">Chicken</option>
-                              <option value="Beef">Beef</option>
-                              <option value="Fish">Fish</option>
-                              <option value="Vegetarian">Vegetarian</option>
-                            </select>
-                            {selected.guests[currentGuestIdx].rsvpStatus === 'NO' && (
-                              <div className="text-xs italic text-gray-600 mt-1">Guest not attending.</div>
+                          <button
+                            type="button"
+                            onClick={() => setShowMealModal(true)}
+                            className={`w-full text-left rounded-xl border-2 px-4 py-3 transition-all ${
+                              selected.guests[currentGuestIdx].foodSelection 
+                                ? 'border-emerald-300 bg-emerald-50 hover:border-emerald-400' 
+                                : 'border-gray-300 bg-white hover:border-gray-400 hover:shadow-sm'
+                            }`}
+                          >
+                            {selected.guests[currentGuestIdx].foodSelection ? (
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className="text-gray-900 font-medium">
+                                    {selected.guests[currentGuestIdx].foodSelection === 'Chicken' && '🐔 Herb Crusted Chicken'}
+                                    {selected.guests[currentGuestIdx].foodSelection === 'Beef' && '🥩 Grilled NY Strip Steak'}
+                                    {selected.guests[currentGuestIdx].foodSelection === 'Vegetarian' && '🥗 Vegan/Vegetarian'}
+                                  </p>
+                                  <p className="text-xs text-gray-500 mt-0.5">Tap to change selection</p>
+                                </div>
+                                <span className="text-emerald-600">✓</span>
+                              </div>
+                            ) : (
+                              <div className="flex items-center justify-between text-gray-500">
+                                <span>Tap to view menu &amp; select</span>
+                                <span>→</span>
+                              </div>
                             )}
-                          </>
+                          </button>
                         )}
                       </div>
                     </div>
@@ -423,6 +397,119 @@ export default function RSVPPage() {
 
             {/* Step 4: Done (show nothing, just modal) */}
             {step === 'done' && <div />}
+
+            {/* Meal Selection Modal */}
+            {showMealModal && selected && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+                <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full mx-4 overflow-hidden">
+                  {/* Header */}
+                  <div className="bg-gradient-to-r from-gray-900 to-gray-800 px-6 py-5 text-white">
+                    <p className="text-sm uppercase tracking-widest text-gray-300 mb-1">Dinner Selection for</p>
+                    <h3 className="font-playfair text-2xl">{selected.guests[currentGuestIdx].firstName} {selected.guests[currentGuestIdx].lastName}</h3>
+                  </div>
+                  
+                  {/* Menu Options */}
+                  <div className="p-6 space-y-4">
+                    {/* Chicken - Recommended */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        updateLocal(selected.guests[currentGuestIdx].id, { foodSelection: 'Chicken' });
+                        setShowMealModal(false);
+                      }}
+                      className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
+                        selected.guests[currentGuestIdx].foodSelection === 'Chicken'
+                          ? 'border-emerald-500 bg-emerald-50 ring-2 ring-emerald-200'
+                          : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-2xl">🐔</span>
+                            <span className="font-playfair text-lg text-gray-900">Herb Crusted Chicken</span>
+                          </div>
+                          <p className="text-gray-600 text-sm ml-9">with Boursin Cheese Sauce</p>
+                          <div className="ml-9 mt-2">
+                            <span className="inline-flex items-center gap-1 text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded-full font-medium">
+                              ⭐ Ryan &amp; Marsha Recommend
+                            </span>
+                          </div>
+                        </div>
+                        {selected.guests[currentGuestIdx].foodSelection === 'Chicken' && (
+                          <span className="text-emerald-600 text-xl">✓</span>
+                        )}
+                      </div>
+                    </button>
+
+                    {/* Beef */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        updateLocal(selected.guests[currentGuestIdx].id, { foodSelection: 'Beef' });
+                        setShowMealModal(false);
+                      }}
+                      className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
+                        selected.guests[currentGuestIdx].foodSelection === 'Beef'
+                          ? 'border-emerald-500 bg-emerald-50 ring-2 ring-emerald-200'
+                          : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-2xl">🥩</span>
+                            <span className="font-playfair text-lg text-gray-900">Grilled NY Strip Steak</span>
+                          </div>
+                          <p className="text-gray-600 text-sm ml-9">with Wild Mushrooms &amp; Bourbon Glaze</p>
+                        </div>
+                        {selected.guests[currentGuestIdx].foodSelection === 'Beef' && (
+                          <span className="text-emerald-600 text-xl">✓</span>
+                        )}
+                      </div>
+                    </button>
+
+                    {/* Vegetarian */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        updateLocal(selected.guests[currentGuestIdx].id, { foodSelection: 'Vegetarian' });
+                        setShowMealModal(false);
+                      }}
+                      className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
+                        selected.guests[currentGuestIdx].foodSelection === 'Vegetarian'
+                          ? 'border-emerald-500 bg-emerald-50 ring-2 ring-emerald-200'
+                          : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-2xl">🥗</span>
+                            <span className="font-playfair text-lg text-gray-900">Vegan / Vegetarian</span>
+                          </div>
+                          <p className="text-gray-600 text-sm ml-9">Please specify your request in dietary restrictions</p>
+                        </div>
+                        {selected.guests[currentGuestIdx].foodSelection === 'Vegetarian' && (
+                          <span className="text-emerald-600 text-xl">✓</span>
+                        )}
+                      </div>
+                    </button>
+                  </div>
+
+                  {/* Footer */}
+                  <div className="px-6 py-4 bg-gray-50 border-t border-gray-100">
+                    <button
+                      type="button"
+                      onClick={() => setShowMealModal(false)}
+                      className="w-full py-2 text-gray-600 hover:text-gray-900 font-medium transition"
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Email opt-in modal */}
             {showEmailOptIn && (
