@@ -172,38 +172,87 @@ export async function PATCH(req: Request) {
             const yesGuests = grp.guests.filter(g => g.rsvpStatus === 'YES');
             const noGuests = grp.guests.filter(g => g.rsvpStatus === 'NO');
             
-            console.log(`Sending confirmation to ${targetEmail}. Yes: ${yesGuests.length}, No: ${noGuests.length}`);
+            // The person who submitted the form (updated guest)
+            const responderName = updated.firstName;
+            const responderIsAttending = updated.rsvpStatus === 'YES';
+            
+            console.log(`Sending confirmation to ${targetEmail}. Responder: ${responderName}, Yes: ${yesGuests.length}, No: ${noGuests.length}`);
             
             let message = `<div style="font-family: Georgia, serif; max-width: 600px; margin: 0 auto; padding: 20px;">`;
             message += `<h1 style="color: #1f2937; font-size: 28px; margin-bottom: 20px;">RSVP Confirmation</h1>`;
-            message += `<p style="color: #374151; font-size: 16px;">Hello!</p>`;
             
-            if (yesGuests.length > 0) {
-              const names = yesGuests.map(g => g.firstName);
-              const formatted = names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}` : names[0];
-              message += `<p style="color: #374151; font-size: 16px;">We are thrilled that <strong>${formatted}</strong> will be joining us at our wedding on <strong>May 16th, 2026</strong>!</p>`;
+            // Personalized greeting based on who's attending
+            if (responderIsAttending) {
+              message += `<p style="color: #374151; font-size: 16px;">Hello ${responderName}!</p>`;
               
-              // List meal selections for attending guests
+              if (yesGuests.length === 1) {
+                // Only the responder is attending
+                message += `<p style="color: #374151; font-size: 16px;">We're thrilled that you'll be joining us at our wedding on <strong>May 16th, 2026</strong>!</p>`;
+              } else {
+                // Multiple people attending - list others + "yourself"
+                const othersAttending = yesGuests.filter(g => g.id !== updated.id).map(g => g.firstName);
+                if (othersAttending.length > 0) {
+                  const othersFormatted = othersAttending.length > 1 
+                    ? `${othersAttending.slice(0, -1).join(', ')}, ${othersAttending[othersAttending.length - 1]} and yourself`
+                    : `${othersAttending[0]} and yourself`;
+                  message += `<p style="color: #374151; font-size: 16px;">We're thrilled that <strong>${othersFormatted}</strong> will be joining us at our wedding on <strong>May 16th, 2026</strong>!</p>`;
+                } else {
+                  message += `<p style="color: #374151; font-size: 16px;">We're thrilled that you'll be joining us at our wedding on <strong>May 16th, 2026</strong>!</p>`;
+                }
+              }
+              
+              // Mention anyone who can't make it
+              if (noGuests.length > 0) {
+                const noNames = noGuests.map(g => g.firstName);
+                const noFormatted = noNames.length > 1 ? `${noNames.slice(0, -1).join(', ')} and ${noNames[noNames.length - 1]}` : noNames[0];
+                message += `<p style="color: #6b7280; font-size: 14px; margin-top: 15px;">We're sorry to hear that ${noFormatted} won't be able to make it, but we completely understand.</p>`;
+              }
+            } else {
+              // Responder is NOT attending
+              message += `<p style="color: #374151; font-size: 16px;">Hello ${responderName},</p>`;
+              
+              if (yesGuests.length > 0) {
+                // Some others are attending
+                const othersAttending = yesGuests.map(g => g.firstName);
+                const othersFormatted = othersAttending.length > 1 
+                  ? `${othersAttending.slice(0, -1).join(', ')} and ${othersAttending[othersAttending.length - 1]}`
+                  : othersAttending[0];
+                message += `<p style="color: #374151; font-size: 16px;">We're sorry you won't be able to join us, but we're thrilled that <strong>${othersFormatted}</strong> will be attending our wedding on <strong>May 16th, 2026</strong>!</p>`;
+              } else {
+                // No one is attending
+                message += `<p style="color: #374151; font-size: 16px;">We're sorry to hear you won't be able to join us on <strong>May 16th, 2026</strong>. We'll miss you, but we completely understand!</p>`;
+                
+                // Mention others who also can't make it
+                const othersNotAttending = noGuests.filter(g => g.id !== updated.id).map(g => g.firstName);
+                if (othersNotAttending.length > 0) {
+                  const othersFormatted = othersNotAttending.length > 1 
+                    ? `${othersNotAttending.slice(0, -1).join(', ')} and ${othersNotAttending[othersNotAttending.length - 1]}`
+                    : othersNotAttending[0];
+                  message += `<p style="color: #6b7280; font-size: 14px;">We also understand that ${othersFormatted} won't be able to make it.</p>`;
+                }
+              }
+            }
+            
+            // Meal selections (only if someone is attending)
+            if (yesGuests.length > 0) {
               message += `<div style="background: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0;">`;
               message += `<p style="color: #1f2937; font-weight: bold; margin-bottom: 10px;">Meal Selections:</p>`;
               yesGuests.forEach(g => {
-                message += `<p style="color: #374151; margin: 5px 0;">${g.firstName} ${g.lastName}: <strong>${g.foodSelection || 'Not selected'}</strong></p>`;
+                const displayName = g.id === updated.id ? 'You' : `${g.firstName} ${g.lastName}`;
+                message += `<p style="color: #374151; margin: 5px 0;">${displayName}: <strong>${g.foodSelection || 'Not selected'}</strong></p>`;
               });
+              message += `</div>`;
+              
+              // Event details (only show if attending)
+              message += `<hr style="border: none; border-top: 1px solid #e5e7eb; margin: 25px 0;" />`;
+              message += `<div style="background: #fef3c7; padding: 15px; border-radius: 8px; margin: 20px 0;">`;
+              message += `<p style="color: #92400e; font-weight: bold; margin-bottom: 10px;">Event Details:</p>`;
+              message += `<p style="color: #78350f; margin: 5px 0;"><strong>Ceremony:</strong> 2:00 PM at St. Padre Pio Parish, Lawrenceville</p>`;
+              message += `<p style="color: #78350f; margin: 5px 0;"><strong>Cocktail Hour:</strong> 5:00 PM at Hilton Garden Inn Southpointe</p>`;
+              message += `<p style="color: #78350f; margin: 5px 0;"><strong>Reception:</strong> 6:00 PM at Hilton Garden Inn Southpointe</p>`;
               message += `</div>`;
             }
             
-            if (noGuests.length > 0) {
-              const names = noGuests.map(g => g.firstName);
-              const formatted = names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}` : names[0];
-              message += `<p style="color: #6b7280; font-size: 14px;">We're sorry ${formatted} won't be able to make it, but we completely understand.</p>`;
-            }
-            
-            message += `<hr style="border: none; border-top: 1px solid #e5e7eb; margin: 25px 0;" />`;
-            message += `<div style="background: #fef3c7; padding: 15px; border-radius: 8px; margin: 20px 0;">`;
-            message += `<p style="color: #92400e; font-weight: bold; margin-bottom: 10px;">Event Details:</p>`;
-            message += `<p style="color: #78350f; margin: 5px 0;"><strong>Ceremony:</strong> 2:00 PM at St. Padre Pio Parish, Lawrenceville</p>`;
-            message += `<p style="color: #78350f; margin: 5px 0;"><strong>Reception:</strong> 5:00 PM at Hilton Garden Inn Southpointe</p>`;
-            message += `</div>`;
             message += `<p style="color: #6b7280; font-size: 14px; margin-top: 30px;">With love,<br/><strong>Ryan & Marsha</strong></p>`;
             message += `</div>`;
             
