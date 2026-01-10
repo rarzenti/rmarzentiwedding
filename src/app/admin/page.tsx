@@ -307,64 +307,75 @@ export default function AdminDashboard() {
   }, [groups, view, guestOfFilter, searchFilter]);
 
   return (
-    <main className="mx-auto w-[75%] max-w-none p-6">
-      <div className="mb-6">
-          <h1 className="font-playfair text-3xl text-gray-900">Guest Entries</h1>
-        </div>
+    <main className="mx-auto w-full px-2 sm:px-4 md:w-[85%] lg:w-[75%] max-w-none md:p-6">
+      {/* Header with title and add button */}
+      <div className="mb-4 flex items-center justify-between">
+        <h1 className="font-playfair text-2xl sm:text-3xl text-gray-900">Guest Entries</h1>
+        <button
+          onClick={() => { setShowForm(!showForm); if (showForm) resetForm(); }}
+          className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${showForm ? 'bg-gray-200 text-gray-700' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}
+        >
+          {showForm ? 'Cancel' : '+ Add Entry'}
+        </button>
+      </div>
 
-        {/* View toggle, guest filter, and search */}
-        <div className="mb-6 flex flex-wrap items-center gap-2">
-          <span className="text-xs uppercase tracking-wide text-gray-600">View:</span>
+      {/* Search bar - full width, prominent */}
+      <div className="mb-4">
+        <input
+          type="text"
+          value={searchFilter}
+          onChange={(e) => setSearchFilter(e.target.value)}
+          placeholder={view === 'GUESTS' ? "Search guests or groups..." : "Search groups or addresses..."}
+          className="admin-input w-full"
+        />
+      </div>
+
+      {/* Filters row - compact pills */}
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <div className="flex gap-1">
           {(['GUESTS','ADDRESSES'] as const).map(opt => (
-            <button key={opt} onClick={() => setView(opt)} className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${view===opt ? 'bg-emerald-600 border-emerald-600 text-white shadow':'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}>{opt==='GUESTS'?'Guests':'Addresses'}</button>
+            <button key={opt} onClick={() => setView(opt)} className={`px-3 py-1.5 rounded-full text-xs sm:text-sm border transition-colors ${view===opt ? 'bg-emerald-600 border-emerald-600 text-white':'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}>{opt==='GUESTS'?'Guests':'Addresses'}</button>
           ))}
-          <span className="text-gray-400 mx-2">|</span>
+        </div>
+        <span className="text-gray-300 hidden sm:inline">|</span>
+        <div className="flex gap-1 flex-wrap">
           {([
-            { key: 'ALL', label: 'All Guests' },
-            { key: 'RYAN', label: "Ryan's Guests" },
-            { key: 'MARSHA', label: "Marsha's Guests" },
+            { key: 'ALL', label: 'All' },
+            { key: 'RYAN', label: "Ryan" },
+            { key: 'MARSHA', label: "Marsha" },
           ] as const).map(opt => (
             <button
               key={opt.key}
               onClick={() => setGuestOfFilter(opt.key)}
-              className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${guestOfFilter === opt.key ? 'bg-blue-600 border-blue-600 text-white shadow' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+              className={`px-3 py-1.5 rounded-full text-xs sm:text-sm border transition-colors ${guestOfFilter === opt.key ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}
             >
               {opt.label}
             </button>
           ))}
-          <div className="flex items-center gap-2 ml-4">
-            <span className="text-xs uppercase tracking-wide text-gray-600">Search:</span>
-            <input
-              type="text"
-              value={searchFilter}
-              onChange={(e) => setSearchFilter(e.target.value)}
-              placeholder={view === 'GUESTS' ? "Search guests or groups..." : "Search groups or addresses..."}
-              className="admin-input"
-            />
-          </div>
         </div>
+      </div>
 
-        {/* Dashboard summary */}
-        <section className="mb-6 grid grid-cols-2 sm:grid-cols-3 gap-3">
-          <div className="rounded-xl border bg-white p-4 shadow-sm">
-            <p className="text-xs uppercase tracking-wide text-gray-700">Total Guests</p>
-            <p className="font-playfair text-3xl text-black">{totalGuests}</p>
-            <p className="text-xs text-gray-700 mt-1">Children: {childrenCount}</p>
-          </div>
-          <div className="rounded-xl border bg-white p-4 shadow-sm">
-            <p className="text-xs uppercase tracking-wide text-gray-700">Attending</p>
-            <p className="font-playfair text-3xl text-black">{yesCount}</p>
-            <p className="text-xs text-gray-700 mt-1">Children Attending: {childrenAttendingCount}</p>
-          </div>
-          <div className="rounded-xl border bg-white p-4 shadow-sm">
-            <p className="text-xs uppercase tracking-wide text-gray-700">Pending</p>
-            <p className="font-playfair text-3xl text-black">{pendingCount}</p>
-          </div>
-        </section>
+      {/* Dashboard summary - more compact */}
+      <section className="mb-4 grid grid-cols-3 gap-2 sm:gap-3">
+        <div className="rounded-lg border bg-white p-2 sm:p-4 shadow-sm text-center">
+          <p className="text-[10px] sm:text-xs uppercase tracking-wide text-gray-600">Total</p>
+          <p className="font-playfair text-xl sm:text-3xl text-black">{totalGuests}</p>
+          <p className="text-[10px] sm:text-xs text-gray-500">{childrenCount} kids</p>
+        </div>
+        <div className="rounded-lg border bg-white p-2 sm:p-4 shadow-sm text-center">
+          <p className="text-[10px] sm:text-xs uppercase tracking-wide text-gray-600">Attending</p>
+          <p className="font-playfair text-xl sm:text-3xl text-black">{yesCount}</p>
+          <p className="text-[10px] sm:text-xs text-gray-500">{childrenAttendingCount} kids</p>
+        </div>
+        <div className="rounded-lg border bg-white p-2 sm:p-4 shadow-sm text-center">
+          <p className="text-[10px] sm:text-xs uppercase tracking-wide text-gray-600">Pending</p>
+          <p className="font-playfair text-xl sm:text-3xl text-black">{pendingCount}</p>
+        </div>
+      </section>
 
         {/* Add Entry form */}
         {showForm && (
-          <section className="mb-10 bg-white rounded-xl border p-6 shadow-sm mx-auto">
+          <section className="mb-10 bg-white rounded-xl border p-3 sm:p-6 shadow-sm mx-auto">
             <h2 className="font-playfair text-xl mb-4 text-gray-900">New Entry</h2>
             <label className="block text-sm mb-2 text-gray-700 font-medium">Group Name</label>
             <input
@@ -373,20 +384,20 @@ export default function AdminDashboard() {
               placeholder="e.g., Mr. Matthew Arzenti and Mrs. Lauren Arzenti"
               className="w-full admin-input mb-4"
             />
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mb-4">
               <input value={contactEmail} onChange={e=>setContactEmail(e.target.value)} placeholder="Household Email" className="admin-input" />
               <input value={contactPhone} onChange={e=>setContactPhone(e.target.value)} placeholder="Phone" className="admin-input" />
               <input value={addr.street1} onChange={e=>setAddr(a=>({...a,street1:e.target.value}))} placeholder="Street 1" className="admin-input" />
-              <input value={addr.street2} onChange={e=>setAddr(a=>({...a,street2:e.target.value}))} placeholder="Street 2" className="admin-input md:col-span-2" />
+              <input value={addr.street2} onChange={e=>setAddr(a=>({...a,street2:e.target.value}))} placeholder="Street 2" className="admin-input sm:col-span-2 md:col-span-2" />
               <input value={addr.city} onChange={e=>setAddr(a=>({...a,city:e.target.value}))} placeholder="City" className="admin-input" />
               <input value={addr.state} onChange={e=>setAddr(a=>({...a,state:e.target.value.toUpperCase().slice(0,2)}))} placeholder="State" className="admin-input" />
               <input value={addr.postalCode} onChange={e=>setAddr(a=>({...a,postalCode:e.target.value}))} placeholder="ZIP" className="admin-input" />
             </div>
             <div className="space-y-3">
               {members.map((m, idx) => (
-                <div key={idx} className="relative grid grid-cols-12 gap-2 items-end pb-6">
+                <div key={idx} className="relative grid grid-cols-2 sm:grid-cols-4 md:grid-cols-12 gap-2 items-end pb-14 sm:pb-6">
                   {/* Title */}
-                  <div className="col-span-2 flex flex-col">
+                  <div className="col-span-1 md:col-span-2 flex flex-col">
                     <label className="block text-sm mb-1 text-gray-700 font-medium">Title</label>
                     <select
                       value={m.title ?? ""}
@@ -404,7 +415,7 @@ export default function AdminDashboard() {
                     </select>
                   </div>
                   {/* First Name */}
-                  <div className="col-span-3 flex flex-col">
+                  <div className="col-span-1 sm:col-span-1 md:col-span-3 flex flex-col">
                     <label className="block text-sm mb-1 text-gray-700 font-medium">First Name</label>
                     <input
                       value={m.firstName}
@@ -413,7 +424,7 @@ export default function AdminDashboard() {
                     />
                   </div>
                   {/* Last Name */}
-                  <div className="col-span-3 flex flex-col">
+                  <div className="col-span-1 sm:col-span-1 md:col-span-3 flex flex-col">
                     <label className="block text-sm mb-1 text-gray-700 font-medium">Last Name</label>
                     <input
                       value={m.lastName}
@@ -422,7 +433,7 @@ export default function AdminDashboard() {
                     />
                   </div>
                   {/* Suffix */}
-                  <div className="col-span-2 flex flex-col">
+                  <div className="col-span-1 md:col-span-2 flex flex-col">
                     <label className="block text-sm mb-1 text-gray-700 font-medium">Suffix</label>
                     <select
                       value={m.suffix ?? ""}
@@ -439,7 +450,7 @@ export default function AdminDashboard() {
                     </select>
                   </div>
                   {/* Guest Of */}
-                  <div className="col-span-2 flex flex-col">
+                  <div className="col-span-2 sm:col-span-2 md:col-span-2 flex flex-col">
                     <label className="block text-sm mb-1 text-gray-700 font-medium">Guest Of</label>
                     <select
                       value={m.guestOf ?? ''} 
@@ -452,13 +463,13 @@ export default function AdminDashboard() {
                     </select>
                   </div>
                   {/* Child checkbox lower-left */}
-                  <div className="absolute left-0 bottom-0">
+                  <div className="absolute left-0 bottom-8 sm:bottom-0">
                     <label className="inline-flex items-center gap-2 text-sm text-gray-700">
                       <input type="checkbox" checked={!!m.isChild} onChange={(e) => updateMember(idx, { isChild: e.target.checked })} /> Child
                     </label>
                   </div>
                   {/* Action buttons */}
-                  <div className="col-span-12 flex justify-end gap-2 mt-2">
+                  <div className="col-span-2 sm:col-span-4 md:col-span-12 flex justify-end gap-2 mt-2">
                     <button type="button" onClick={() => addMemberRow()} className="text-sm px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md flex items-center gap-1">
                       <PlusIcon className="h-4 w-4" /> Add Guest
                     </button>
@@ -476,18 +487,6 @@ export default function AdminDashboard() {
           </section>
         )}
 
-        {/* Add Entry Button - positioned above guest list */}
-        {!showForm && (
-          <div className="mb-4 flex justify-start">
-            <button 
-              onClick={() => setShowForm(true)} 
-              className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg flex items-center gap-2 font-medium transition-colors shadow-sm"
-            >
-              <PlusIcon className="h-5 w-5" /> Add Entry
-            </button>
-          </div>
-        )}
-
         {/* Entries list with admin editing */}
         <section className="space-y-3">
           {loading ? (
@@ -502,8 +501,6 @@ export default function AdminDashboard() {
                 <thead className="bg-gray-100">
                   <tr className="text-left">
                     <th className="p-2 text-gray-900 font-semibold">Group</th>
-                    <th className="p-2 text-gray-900 font-semibold">Email</th>
-                    <th className="p-2 text-gray-900 font-semibold">Phone</th>
                     <th className="p-2 text-gray-900 font-semibold">Address</th>
                     <th className="p-2 text-gray-900 font-semibold">Actions</th>
                   </tr>
@@ -792,6 +789,7 @@ function AddGuestInline({ onAdd }: { onAdd: (d: { title?: string; firstName: str
 
 function AddressRow({ group, onUpdate }: { group: GroupItem; onUpdate: (p: Partial<GroupItem>) => void }) {
   const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     email: group.email || '',
     phone: group.phone || '',
@@ -801,7 +799,21 @@ function AddressRow({ group, onUpdate }: { group: GroupItem; onUpdate: (p: Parti
     state: group.state || '',
     postalCode: group.postalCode || '',
   });
+  
+  const resetForm = () => {
+    setForm({
+      email: group.email || '',
+      phone: group.phone || '',
+      street1: group.street1 || '',
+      street2: group.street2 || '',
+      city: group.city || '',
+      state: group.state || '',
+      postalCode: group.postalCode || '',
+    });
+  };
+  
   const save = async () => {
+    setSaving(true);
     const contact: Record<string, string> = { ...form };
     try {
       const res = await fetch('/api/groups', { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ id: group.id, contact }) });
@@ -812,36 +824,126 @@ function AddressRow({ group, onUpdate }: { group: GroupItem; onUpdate: (p: Parti
     } catch(e: unknown){ 
       const errorMessage = e instanceof Error ? e.message : 'Failed';
       alert(errorMessage);
+    } finally {
+      setSaving(false);
     }
   };
-  return (
-        <tr className="border-t align-top">
-      <td className="p-2 font-medium text-black w-48">{group.name||'Untitled'}<div className="text-xs text-gray-500">{group.guests.length} guest{group.guests.length===1?'':'s'}</div></td>
-      <td className="p-2 w-56 text-black">{editing ? <input value={form.email} onChange={e=>setForm(f=>({...f,email:e.target.value}))} placeholder="email@example.com" className="w-full admin-input-sm" /> : (group.email||<span className="text-gray-400">—</span>)}</td>
-      <td className="p-2 w-40 text-black">{editing ? <input value={form.phone} onChange={e=>setForm(f=>({...f,phone:e.target.value}))} placeholder="(555) 123-4567" className="w-full admin-input-sm" /> : (group.phone||<span className="text-gray-400">—</span>)}</td>
-      <td className="p-2">
-        {editing ? (
-          <div className="grid grid-cols-2 gap-1">
-            <input placeholder="Street1" value={form.street1} onChange={e=>setForm(f=>({...f,street1:e.target.value}))} className="admin-input-sm col-span-2" />
-            <input placeholder="Street2" value={form.street2} onChange={e=>setForm(f=>({...f,street2:e.target.value}))} className="admin-input-sm col-span-2" />
-            <input placeholder="City" value={form.city} onChange={e=>setForm(f=>({...f,city:e.target.value}))} className="admin-input-sm" />
-            <input placeholder="State" value={form.state} onChange={e=>setForm(f=>({...f,state:e.target.value.toUpperCase().slice(0,2)}))} className="admin-input-sm" />
-            <input placeholder="ZIP" value={form.postalCode} onChange={e=>setForm(f=>({...f,postalCode:e.target.value}))} className="admin-input-sm col-span-2" />
+
+  if (editing) {
+    return (
+      <tr className="border-t">
+        <td colSpan={3} className="p-0">
+          <div className="bg-blue-50 border-2 border-blue-200 rounded-lg m-2 p-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-gray-900">Edit Address: {group.name || 'Untitled'}</h3>
+              <button 
+                onClick={() => { setEditing(false); resetForm(); }}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Street Address */}
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-medium text-gray-700 mb-1">Street Address</label>
+                <input 
+                  value={form.street1} 
+                  onChange={e => setForm(f => ({...f, street1: e.target.value}))} 
+                  placeholder="123 Main Street"
+                  className="admin-input w-full" 
+                />
+              </div>
+              
+              {/* Street 2 */}
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-medium text-gray-700 mb-1">Apt/Suite/Unit (optional)</label>
+                <input 
+                  value={form.street2} 
+                  onChange={e => setForm(f => ({...f, street2: e.target.value}))} 
+                  placeholder="Apt 4B"
+                  className="admin-input w-full" 
+                />
+              </div>
+              
+              {/* City */}
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">City</label>
+                <input 
+                  value={form.city} 
+                  onChange={e => setForm(f => ({...f, city: e.target.value}))} 
+                  placeholder="Pittsburgh"
+                  className="admin-input w-full" 
+                />
+              </div>
+              
+              {/* State & ZIP row */}
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">State</label>
+                  <input 
+                    value={form.state} 
+                    onChange={e => setForm(f => ({...f, state: e.target.value.toUpperCase().slice(0, 2)}))} 
+                    placeholder="PA"
+                    maxLength={2}
+                    className="admin-input w-full" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">ZIP Code</label>
+                  <input 
+                    value={form.postalCode} 
+                    onChange={e => setForm(f => ({...f, postalCode: e.target.value}))} 
+                    placeholder="15213"
+                    className="admin-input w-full" 
+                  />
+                </div>
+              </div>
+            </div>
+            
+            {/* Action buttons */}
+            <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-blue-200">
+              <button 
+                onClick={() => { setEditing(false); resetForm(); }}
+                className="px-4 py-2 text-sm rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={save}
+                disabled={saving}
+                className="px-4 py-2 text-sm rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 transition-colors"
+              >
+                {saving ? 'Saving...' : 'Save Address'}
+              </button>
+            </div>
           </div>
-        ) : (
-          <div className="text-xs text-gray-900 whitespace-pre-line">{[group.street1, group.street2, [group.city, group.state].filter(Boolean).join(', '), group.postalCode].filter(Boolean).join('\n') || <span className="text-gray-400">—</span>}</div>
-        )}
+        </td>
+      </tr>
+    );
+  }
+
+  return (
+    <tr className="border-t align-top hover:bg-gray-50">
+      <td className="p-2 font-medium text-black w-48">
+        {group.name || 'Untitled'}
+        <div className="text-xs text-gray-500">{group.guests.length} guest{group.guests.length === 1 ? '' : 's'}</div>
       </td>
-      <td className="p-2 w-32">{editing ? (
-        <div className="flex gap-2">
-          <button onClick={save} className="px-2 py-1 text-xs rounded bg-emerald-600 text-white">Save</button>
-          <button onClick={()=>{setEditing(false); setForm({ email: group.email||'', phone: group.phone||'', street1: group.street1||'', street2: group.street2||'', city: group.city||'', state: group.state||'', postalCode: group.postalCode||'' });}} className="px-2 py-1 text-xs rounded border border-gray-600 bg-gray-100 text-gray-700 hover:bg-gray-200">Cancel</button>
+      <td className="p-2">
+        <div className="text-sm text-gray-900">
+          {[group.street1, group.street2, [group.city, group.state].filter(Boolean).join(', '), group.postalCode].filter(Boolean).join(', ') || <span className="text-gray-400">No address</span>}
         </div>
-      ) : (
-        <button onClick={()=>setEditing(true)} className="p-2 rounded border border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white transition-colors">
+      </td>
+      <td className="p-2 w-24">
+        <button 
+          onClick={() => setEditing(true)} 
+          className="p-2 rounded-lg border border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white transition-colors"
+          title="Edit address"
+        >
           <PencilIcon className="w-4 h-4" />
         </button>
-      )}</td>
+      </td>
     </tr>
   );
 }

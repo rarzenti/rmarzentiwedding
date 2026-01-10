@@ -171,7 +171,7 @@ export default function RSVPPage() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Start typing your first or last name"
-              className="w-full admin-input rounded-xl"
+              className="form-input"
             />
             {loading && <p className="mt-3 text-sm text-gray-700">Searching…</p>}
             {!loading && results.length > 0 && (
@@ -276,11 +276,11 @@ export default function RSVPPage() {
                 <p className="text-sm text-gray-700 mb-6">Please respond for each person below.</p>
                 {selected.guests.length > 0 && (
                   <div className="rounded-xl border bg-white p-4 shadow-sm">
-                    <p className="font-medium mb-3 text-black">{selected.guests[currentGuestIdx].title ? `${selected.guests[currentGuestIdx].title} ` : ""}{selected.guests[currentGuestIdx].firstName} {selected.guests[currentGuestIdx].lastName}</p>
+                    <p className="font-medium mb-3 text-gray-900">{selected.guests[currentGuestIdx].title ? `${selected.guests[currentGuestIdx].title} ` : ""}{selected.guests[currentGuestIdx].firstName} {selected.guests[currentGuestIdx].lastName}</p>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
-                        <label className="block font-cormorant text-sm tracking-wide mb-2 text-black">Attending</label>
-                        <div className="flex gap-5 text-sm text-black">
+                        <label className="block font-cormorant text-sm tracking-wide mb-2 text-gray-900 font-medium">Attending</label>
+                        <div className="flex gap-5 text-sm text-gray-900 font-medium">
                           <label className="flex items-center gap-2">
                             <input
                               type="radio"
@@ -302,9 +302,9 @@ export default function RSVPPage() {
                         </div>
                       </div>
                       <div className="md:col-span-2">
-                        <label className="block font-cormorant text-sm tracking-wide mb-2 text-black">Dinner selection</label>
+                        <label className="block font-cormorant text-sm tracking-wide mb-2 text-gray-900 font-medium">Dinner selection</label>
                         {selected.guests[currentGuestIdx].isChild ? (
-                          <div className="w-full rounded-xl border border-gray-300 px-4 py-3 bg-gray-50 text-black">
+                          <div className="w-full rounded-xl border-2 border-gray-300 px-4 py-3 bg-gray-50 text-gray-900 font-medium">
                             Kids Meal — Crisp Herb-Encrusted Chicken Fillets with Golden Pommes Frites and a Savory Tomato Reduction (chicken tenders and fries)
                           </div>
                         ) : (
@@ -312,7 +312,7 @@ export default function RSVPPage() {
                             <select
                               value={selected.guests[currentGuestIdx].foodSelection ?? ""}
                               onChange={(e) => updateLocal(selected.guests[currentGuestIdx].id, { foodSelection: e.target.value || null })}
-                              className={`w-full rounded-xl border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black ${selected.guests[currentGuestIdx].rsvpStatus === 'NO' ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'text-black'}`}
+                              className={`form-select ${selected.guests[currentGuestIdx].rsvpStatus === 'NO' ? 'bg-gray-100 !text-gray-500 cursor-not-allowed' : ''}`}
                               disabled={selected.guests[currentGuestIdx].rsvpStatus === 'NO'}
                               required={selected.guests[currentGuestIdx].rsvpStatus === 'YES'}
                             >
@@ -323,19 +323,19 @@ export default function RSVPPage() {
                               <option value="Vegetarian">Vegetarian</option>
                             </select>
                             {selected.guests[currentGuestIdx].rsvpStatus === 'NO' && (
-                              <div className="text-xs italic text-gray-500 mt-1">Guest not attending.</div>
+                              <div className="text-xs italic text-gray-600 mt-1">Guest not attending.</div>
                             )}
                           </>
                         )}
                       </div>
                     </div>
                     <div className="mt-4">
-                      <label className="block font-cormorant text-sm tracking-wide mb-2 text-black">Dietary restrictions</label>
+                      <label className="block font-cormorant text-sm tracking-wide mb-2 text-gray-900 font-medium">Dietary restrictions</label>
                       <textarea
                         value={selected.guests[currentGuestIdx].dietaryRestrictions ?? ""}
                         onChange={(e) => updateLocal(selected.guests[currentGuestIdx].id, { dietaryRestrictions: e.target.value })}
                         placeholder="Allergies or dietary needs (e.g., gluten-free, nut allergy)"
-                        className="w-full rounded-xl border border-gray-300 px-4 py-3 text-black focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black min-h-[90px]"
+                        className="form-textarea"
                       />
                     </div>
                     <div className="mt-6 flex justify-between">
@@ -384,9 +384,9 @@ export default function RSVPPage() {
                   value={groupEmail}
                   onChange={(e) => setGroupEmail(e.target.value)}
                   placeholder="group@email.com"
-                  className="w-full rounded-xl border border-gray-300 px-4 py-3 text-black focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black mb-4"
+                  className="form-input mb-4"
                 />
-                <label className={`block font-cormorant text-sm tracking-wide mb-2 mt-4 ${respondingGuestError ? 'text-red-600' : 'text-black'}`}>
+                <label className={`block font-cormorant text-sm tracking-wide mb-2 mt-4 font-medium ${respondingGuestError ? 'text-red-600' : 'text-gray-900'}`}>
                   Who is responding?{respondingGuestError && ' *Response is required'}
                 </label>
                 <select
@@ -395,7 +395,7 @@ export default function RSVPPage() {
                     setRespondingGuestId(e.target.value);
                     if (e.target.value) setRespondingGuestError(false);
                   }}
-                  className={`w-full rounded-xl border px-4 py-3 text-black focus:outline-none focus:ring-2 focus:border-black mb-4 ${respondingGuestError ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-black/20'}`}
+                  className={`form-select mb-4 ${respondingGuestError ? '!border-red-500 focus:!ring-red-500' : ''}`}
                 >
                   <option value="">Select your name</option>
                   {selected.guests.map(g => (
@@ -427,39 +427,53 @@ export default function RSVPPage() {
             {/* Email opt-in modal */}
             {showEmailOptIn && (
               <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-                <div className="bg-white rounded-xl p-8 shadow-xl max-w-md w-full">
+                <div className="bg-white rounded-xl p-8 shadow-xl max-w-md w-full mx-4">
                   <h3 className="font-playfair text-2xl mb-4 text-emerald-800 bg-emerald-100 rounded px-2 py-1">Would you like to receive an email confirmation?</h3>
                   <p className="mb-6 text-gray-900 font-medium">We can send you a personalized confirmation email for your RSVP.</p>
                   <form
                     onSubmit={async (e) => {
                       e.preventDefault();
-                      if (!groupEmail) return;
-                      setEmailOptIn(true);
+                      const emailToSend = groupEmail.trim();
+                      if (!emailToSend) {
+                        alert('Please enter an email address');
+                        return;
+                      }
+                      
                       setShowEmailOptIn(false);
-                      if (selected && groupEmail && respondingGuestId) {
+                      
+                      if (selected && respondingGuestId) {
                         const g = selected.guests.find(guest => guest.id === respondingGuestId);
                         if (g) {
-                          await fetch("/api/guests", {
-                            method: "PATCH",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({
-                              id: g.id,
-                              rsvpStatus: g.rsvpStatus,
-                              foodSelection: g.foodSelection ?? null,
-                              dietaryRestrictions: g.dietaryRestrictions ?? null,
-                              email: groupEmail,
-                              sendConfirmation: true,
-                              respondingGuestId: respondingGuestId,
-                            }),
-                          });
+                          try {
+                            const res = await fetch("/api/guests", {
+                              method: "PATCH",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({
+                                id: g.id,
+                                rsvpStatus: g.rsvpStatus,
+                                foodSelection: g.foodSelection ?? null,
+                                dietaryRestrictions: g.dietaryRestrictions ?? null,
+                                email: emailToSend,
+                                sendConfirmation: true,
+                              }),
+                            });
+                            
+                            if (!res.ok) {
+                              const data = await res.json();
+                              console.error('Failed to send confirmation:', data);
+                            }
+                          } catch (err) {
+                            console.error('Error sending confirmation email:', err);
+                          }
                         }
                       }
-                      setTimeout(() => setStep('confirm'), 100);
+                      
+                      setStep('confirm');
                     }}
                   >
                     <input
                       type="email"
-                      className="w-full rounded-xl border border-gray-300 px-4 py-3 text-black focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black mb-4"
+                      className="form-input mb-4"
                       placeholder="Enter your email address"
                       value={groupEmail}
                       onChange={e => setGroupEmail(e.target.value)}

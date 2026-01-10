@@ -100,7 +100,7 @@ export async function POST(req: Request) {
 export async function PATCH(req: Request) {
   try {
     const body = await req.json();
-    const { id, groupName, sendConfirmation, ...data } = body ?? {};
+    const { id, groupName, sendConfirmation, email, ...data } = body ?? {};
     if (!id || typeof id !== "string") {
       return NextResponse.json({ error: "id is required" }, { status: 400 });
     }
@@ -139,31 +139,82 @@ export async function PATCH(req: Request) {
     const updated = await prisma.guest.update({
       where: { id },
       data: { ...updateData, ...groupUpdate },
-      include: { group: { select: { email: true, guests: { select: { id: true, firstName: true, rsvpStatus: true } } } } },
+      include: { group: { select: { id: true, email: true, guests: { select: { id: true, firstName: true, lastName: true, rsvpStatus: true, foodSelection: true } } } } },
     });
 
-    // Send confirmation to group email rather than guest email
-    if (sendConfirmation && updated.group?.email) {
-      try {
-        const grp = updated.group;
-        const yesGuests = grp.guests.filter(g => g.rsvpStatus === 'YES');
-        const noGuests = grp.guests.filter(g => g.rsvpStatus === 'NO');
-        let message = `<p>Hello!</p>`;
-        if (yesGuests.length) {
-          const names = yesGuests.map(g => g.firstName);
-          const formatted = names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}` : names[0];
-          message += `<p>We are thrilled to see ${formatted} at our wedding on May 16th, 2026.</p>`;
-        } else if (noGuests.length) {
-          const names = noGuests.map(g => g.firstName);
-          const formatted = names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}` : names[0];
-          message += `<p>We're sad to hear ${formatted} can't make it, but we understand.</p>`;
+    // If email is provided and guest has a group, update the group's email
+    if (email && typeof email === "string" && email.trim() && updated.group?.id) {
+      console.log(`Updating group ${updated.group.id} email to: ${email.trim()}`);
+      await prisma.group.update({
+        where: { id: updated.group.id },
+        data: { email: email.trim() },
+      });
+    }
+
+    // Send confirmation email if requested
+    if (sendConfirmation) {
+      console.log('sendConfirmation flag is true');
+      
+      if (!updated.group?.id) {
+        console.log('No group ID found for guest, cannot send email');
+      } else {
+        // Get the latest group data with updated email
+        const grp = await prisma.group.findUnique({
+          where: { id: updated.group.id },
+          select: { email: true, name: true, guests: { select: { id: true, firstName: true, lastName: true, rsvpStatus: true, foodSelection: true } } }
+        });
+        
+        const targetEmail = email?.trim() || grp?.email;
+        console.log(`Target email: ${targetEmail}, Group email from DB: ${grp?.email}`);
+        
+        if (targetEmail && grp) {
+          try {
+            const yesGuests = grp.guests.filter(g => g.rsvpStatus === 'YES');
+            const noGuests = grp.guests.filter(g => g.rsvpStatus === 'NO');
+            
+            console.log(`Sending confirmation to ${targetEmail}. Yes: ${yesGuests.length}, No: ${noGuests.length}`);
+            
+            let message = `<div style="font-family: Georgia, serif; max-width: 600px; margin: 0 auto; padding: 20px;">`;
+            message += `<h1 style="color: #1f2937; font-size: 28px; margin-bottom: 20px;">RSVP Confirmation</h1>`;
+            message += `<p style="color: #374151; font-size: 16px;">Hello!</p>`;
+            
+            if (yesGuests.length > 0) {
+              const names = yesGuests.map(g => g.firstName);
+              const formatted = names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}` : names[0];
+              message += `<p style="color: #374151; font-size: 16px;">We are thrilled that <strong>${formatted}</strong> will be joining us at our wedding on <strong>May 16th, 2026</strong>!</p>`;
+              
+              // List meal selections for attending guests
+              message += `<div style="background: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0;">`;
+              message += `<p style="color: #1f2937; font-weight: bold; margin-bottom: 10px;">Meal Selections:</p>`;
+              yesGuests.forEach(g => {
+                message += `<p style="color: #374151; margin: 5px 0;">${g.firstName} ${g.lastName}: <strong>${g.foodSelection || 'Not selected'}</strong></p>`;
+              });
+              message += `</div>`;
+            }
+            
+            if (noGuests.length > 0) {
+              const names = noGuests.map(g => g.firstName);
+              const formatted = names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}` : names[0];
+              message += `<p style="color: #6b7280; font-size: 14px;">We're sorry ${formatted} won't be able to make it, but we completely understand.</p>`;
+            }
+            
+            message += `<hr style="border: none; border-top: 1px solid #e5e7eb; margin: 25px 0;" />`;
+            message += `<div style="background: #fef3c7; padding: 15px; border-radius: 8px; margin: 20px 0;">`;
+            message += `<p style="color: #92400e; font-weight: bold; margin-bottom: 10px;">Event Details:</p>`;
+            message += `<p style="color: #78350f; margin: 5px 0;"><strong>Ceremony:</strong> 2:00 PM at St. Padre Pio Parish, Lawrenceville</p>`;
+            message += `<p style="color: #78350f; margin: 5px 0;"><strong>Reception:</strong> 5:00 PM at Hilton Garden Inn Southpointe</p>`;
+            message += `</div>`;
+            message += `<p style="color: #6b7280; font-size: 14px; margin-top: 30px;">With love,<br/><strong>Ryan & Marsha</strong></p>`;
+            message += `</div>`;
+            
+            await sendEmail({ to: targetEmail, subject: 'RSVP Confirmation - Ryan & Marsha Wedding', html: message });
+            console.log('Confirmation email sent successfully');
+          } catch (e) {
+            console.error('Failed to send confirmation email', e);
+          }
         } else {
-          message += `<p>Your group is updated. Feel free to RSVP at your convenience.</p>`;
+          console.log('No target email or group data available');
         }
-        message += `<p>Ceremony: <b>2PM</b> at <b>St. Padre Pio Parish</b>, Lawrenceville. Reception: <b>5PM</b> at <b>Hilton Garden Inn Southpointe</b>.</p>`;
-        await sendEmail({ to: updated.group.email, subject: 'RSVP Update', html: message });
-      } catch (e) {
-        console.error('Failed to send group email', e);
       }
     }
 

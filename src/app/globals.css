@@ -6,6 +6,10 @@
   --text-primary: #111827;    /* Darker primary text (gray-900) */
   --text-secondary: #374151;  /* Darker secondary text (gray-700) */
   --text-muted: #4b5563;      /* Darker muted text (gray-600) */
+  --input-text: #111827;      /* Input text color - very dark */
+  --input-placeholder: #6b7280; /* Placeholder text - visible gray */
+  --input-border: #9ca3af;    /* Border color - medium gray */
+  --input-border-focus: #3b82f6; /* Focus border - blue */
 }
 
 /* Font helpers to match component classes */
@@ -25,6 +29,10 @@
     --text-primary: #f9fafb;    /* Light primary text for dark mode */
     --text-secondary: #e5e7eb;  /* Light secondary text for dark mode */
     --text-muted: #d1d5db;      /* Light muted text for dark mode */
+    --input-text: #f9fafb;
+    --input-placeholder: #9ca3af;
+    --input-border: #6b7280;
+    --input-border-focus: #60a5fa;
   }
 }
 
@@ -36,21 +44,61 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Enhanced contrast overrides for better readability */
+/* ============================================
+   GLOBAL INPUT/FORM FIELD CONTRAST FIX
+   Apply high contrast to ALL form elements
+   ============================================ */
+
+/* Base input styles - applies to all inputs, textareas, selects */
+input, textarea, select {
+  color: var(--input-text) !important;
+  background-color: #ffffff;
+  border-color: var(--input-border);
+  font-weight: 500;
+}
+
+input::placeholder, textarea::placeholder {
+  color: var(--input-placeholder) !important;
+  opacity: 1;
+}
+
+/* Select dropdowns - ensure text is visible */
+select option {
+  color: var(--input-text);
+  background-color: #ffffff;
+}
+
+/* Focus states for all inputs */
+input:focus, textarea:focus, select:focus {
+  border-color: var(--input-border-focus);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+/* Disabled state */
+input:disabled, textarea:disabled, select:disabled {
+  color: #9ca3af !important;
+  background-color: #f3f4f6;
+  cursor: not-allowed;
+}
+
+/* ============================================
+   Enhanced contrast overrides for better readability
+   ============================================ */
 .text-gray-700 {
-  color: #374151 !important; /* Darker than default gray-700 */
+  color: #374151 !important;
 }
 
 .text-gray-600 {
-  color: #4b5563 !important; /* Darker than default gray-600 */
+  color: #4b5563 !important;
 }
 
 .text-gray-800 {
-  color: #1f2937 !important; /* Darker than default gray-800 */
+  color: #1f2937 !important;
 }
 
 .text-gray-900 {
-  color: #111827 !important; /* Ensure maximum contrast */
+  color: #111827 !important;
 }
 
 /* Ensure links have high contrast */
@@ -67,25 +115,63 @@ button {
   font-weight: 500;
 }
 
-/* Form input contrast */
-input, textarea, select {
-  color: var(--text-primary);
-  border-color: #6b7280; /* Darker border for better visibility */
-}
-
-input::placeholder, textarea::placeholder {
-  color: #6b7280; /* Darker placeholder text */
-}
-
-/* Admin input style with high contrast */
+/* ============================================
+   ADMIN INPUT STYLES - high contrast variants
+   ============================================ */
 .admin-input {
-  @apply px-3 py-2 border-2 border-gray-400 rounded-md text-gray-900 bg-white placeholder-gray-600 font-medium;
+  @apply px-3 py-2 border-2 border-gray-400 rounded-md bg-white placeholder-gray-500 font-medium;
   @apply focus:ring-2 focus:ring-blue-500 focus:border-blue-600 shadow-sm transition-all;
-  @apply text-base; /* Ensure readable text size */
+  @apply text-base;
+  color: #111827 !important;
 }
 
 .admin-input-sm {
-  @apply px-2 py-1 border-2 border-gray-400 rounded-md text-gray-900 bg-white placeholder-gray-600 font-medium;
+  @apply px-2 py-1 border-2 border-gray-400 rounded-md bg-white placeholder-gray-500 font-medium;
   @apply focus:ring-2 focus:ring-blue-500 focus:border-blue-600 shadow-sm transition-all;
-  @apply text-sm; /* Smaller variant for filter inputs */
+  @apply text-sm;
+  color: #111827 !important;
+}
+
+/* ============================================
+   PUBLIC-FACING INPUT STYLES (RSVP, etc.)
+   ============================================ */
+.form-input {
+  @apply w-full rounded-xl border-2 border-gray-400 px-4 py-3 bg-white font-medium;
+  @apply focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500;
+  @apply transition-all shadow-sm;
+  color: #111827 !important;
+}
+
+.form-input::placeholder {
+  color: #6b7280 !important;
+  opacity: 1;
+}
+
+.form-input:disabled {
+  @apply bg-gray-100 cursor-not-allowed;
+  color: #6b7280 !important;
+}
+
+.form-select {
+  @apply w-full rounded-xl border-2 border-gray-400 px-4 py-3 bg-white font-medium;
+  @apply focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500;
+  @apply transition-all shadow-sm;
+  color: #111827 !important;
+}
+
+.form-select:disabled {
+  @apply bg-gray-100 cursor-not-allowed;
+  color: #6b7280 !important;
+}
+
+.form-textarea {
+  @apply w-full rounded-xl border-2 border-gray-400 px-4 py-3 bg-white font-medium;
+  @apply focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500;
+  @apply transition-all shadow-sm min-h-[90px];
+  color: #111827 !important;
+}
+
+.form-textarea::placeholder {
+  color: #6b7280 !important;
+  opacity: 1;
 }
