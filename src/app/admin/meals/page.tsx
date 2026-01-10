@@ -341,8 +341,8 @@ function TableCard({ label, nickname, guests, onOpen, hasDietary, mealKeys, tabl
   return (
     <button onClick={onOpen} className={`relative group text-left rounded-xl border bg-white/95 backdrop-blur-sm p-6 hover:shadow-lg transition min-h-[230px] flex flex-col ${special? 'ring-1 ring-amber-300' : 'border-emerald-100'}`}>
       <div className="mb-4 pr-20">
-        <div className="font-playfair text-2xl text-emerald-900 leading-tight">{nickname ? nickname : label}</div>
-        {nickname && <div className="text-[11px] text-emerald-600 font-cormorant tracking-wide">{label}</div>}
+        <div className="font-playfair text-2xl text-emerald-900 leading-tight whitespace-nowrap">{nickname ? nickname : label}</div>
+        {nickname && <div className="text-[11px] text-emerald-600 font-cormorant tracking-wide whitespace-nowrap">{label}</div>}
       </div>
       {hasDietary && (
         <span className="absolute -top-2 -right-2 inline-flex items-center gap-1 bg-amber-600 text-white text-[11px] px-2 py-1 rounded-full shadow-lg">⚠ Dietary</span>

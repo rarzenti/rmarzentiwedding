@@ -248,7 +248,7 @@ export default function DetailsPage() {
                 href="https://www.google.com/maps/search/?api=1&query=225+37th+St,+Pittsburgh,+PA+15201" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="text-blue-600 hover:text-blue-800 font-light text-sm transition-colors duration-200 inline-flex items-center"
+                className="text-gray-900 hover:text-black font-semibold text-sm sm:text-base transition-colors duration-200 inline-flex items-center underline decoration-2 underline-offset-2"
               >
                 Open in Google Maps →
               </a>
@@ -263,7 +263,7 @@ export default function DetailsPage() {
                 href="https://www.google.com/maps/search/?api=1&query=1000+Corporate+Dr,+Canonsburg,+PA+15317" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="text-blue-600 hover:text-blue-800 font-light text-sm transition-colors duration-200 inline-flex items-center"
+                className="text-gray-900 hover:text-black font-semibold text-sm sm:text-base transition-colors duration-200 inline-flex items-center underline decoration-2 underline-offset-2"
               >
                 Open in Google Maps →
               </a>
@@ -271,8 +271,46 @@ export default function DetailsPage() {
           </div>
         </div>
       </div>
-            
 
+      {/* Parking Information */}
+      <div className="mb-12">
+        <div className="bg-gradient-to-br from-gray-50 to-white p-10 rounded-2xl shadow-lg border border-gray-100">
+          <div className="text-center mb-8">
+            <h2 className="font-playfair text-4xl font-light text-gray-800 mb-4 tracking-wide">Parking</h2>
+            <div className="w-20 h-0.5 bg-gradient-to-r from-transparent via-gray-400 to-transparent mx-auto"></div>
+          </div>
+          <div className="max-w-2xl mx-auto space-y-6">
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+              <h3 className="font-playfair text-xl font-light text-gray-800 mb-3 tracking-wide">Church Parking Lot</h3>
+              <p className="text-gray-700 font-light leading-relaxed">
+                A parking lot is located on 37th Street, directly across from the church entrance, and will be available for guests.
+              </p>
+            </div>
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+              <h3 className="font-playfair text-xl font-light text-gray-800 mb-3 tracking-wide">Street Parking</h3>
+              <p className="text-gray-700 font-light leading-relaxed">
+                Additional street parking is available on nearby side streets in Lawrenceville.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Questions Section */}
+      <div className="text-center bg-gradient-to-r from-gray-50 to-white p-8 rounded-2xl border border-gray-100">
+        <div className="mb-6">
+          <h3 className="font-playfair text-2xl font-light text-gray-800 mb-4 tracking-wide">Questions?</h3>
+          <div className="w-12 h-0.5 bg-gradient-to-r from-transparent via-gray-400 to-transparent mx-auto mb-4"></div>
+        </div>
+        <p className="text-gray-600 font-light mb-4">
+          We&apos;re here to help with any accommodation questions
+        </p>
+        <p className="text-gray-500 font-light italic">
+          Ryan & Marsha&apos;s email: rmarzentiwedding@gmail.com
+          <br />
+          or call hotel directly at: (724) 743-5000
+        </p>
+      </div>
     </main>
   );
 }

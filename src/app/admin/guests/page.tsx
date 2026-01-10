@@ -249,7 +249,7 @@ export default function GuestDataPage() {
                     value={guestFilter}
                     onChange={e => setGuestFilter(e.target.value)}
                     placeholder="Filter..."
-                    className="mt-1 px-2 py-1 border border-gray-300 rounded-md text-xs font-cormorant text-gray-900 bg-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-600 shadow-sm transition"
+                    className="mt-1 admin-input-sm"
                   />
                 </div>
               </th>
@@ -261,7 +261,7 @@ export default function GuestDataPage() {
                     value={groupFilter}
                     onChange={e => setGroupFilter(e.target.value)}
                     placeholder="Filter..."
-                    className="mt-1 px-2 py-1 border border-gray-300 rounded-md text-xs font-cormorant text-gray-900 bg-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-600 shadow-sm transition"
+                    className="mt-1 admin-input-sm"
                   />
                 </div>
               </th>
@@ -273,7 +273,7 @@ export default function GuestDataPage() {
                     value={emailFilter}
                     onChange={e => setEmailFilter(e.target.value)}
                     placeholder="Filter..."
-                    className="mt-1 px-2 py-1 border border-gray-300 rounded-md text-xs font-cormorant text-gray-900 bg-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-600 shadow-sm transition"
+                    className="mt-1 admin-input-sm"
                   />
                 </div>
               </th>
@@ -315,7 +315,7 @@ export default function GuestDataPage() {
                     value={foodFilter}
                     onChange={e => setFoodFilter(e.target.value)}
                     placeholder="Filter..."
-                    className="mt-1 px-2 py-1 border border-gray-300 rounded-md text-xs font-cormorant text-gray-900 bg-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-600 shadow-sm transition"
+                    className="mt-1 admin-input-sm"
                   />
                 </div>
               </th>
@@ -327,7 +327,7 @@ export default function GuestDataPage() {
                     value={dietaryFilter}
                     onChange={e => setDietaryFilter(e.target.value)}
                     placeholder="Filter..."
-                    className="mt-1 px-2 py-1 border border-gray-300 rounded-md text-xs font-cormorant text-gray-900 bg-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-600 shadow-sm transition"
+                    className="mt-1 admin-input-sm"
                   />
                 </div>
               </th>

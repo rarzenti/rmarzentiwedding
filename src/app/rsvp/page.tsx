@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 // Feature flag - set to true to enable RSVP functionality after New Year
-const RSVP_ENABLED = false;
+const RSVP_ENABLED = true;
 
 type RsvpStatus = "YES" | "NO";
 
@@ -171,7 +171,7 @@ export default function RSVPPage() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Start typing your first or last name"
-              className="w-full rounded-xl border border-gray-300 px-4 py-3 text-black placeholder-black focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black"
+              className="w-full admin-input rounded-xl"
             />
             {loading && <p className="mt-3 text-sm text-gray-700">Searching…</p>}
             {!loading && results.length > 0 && (

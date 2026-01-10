@@ -273,7 +273,7 @@ export default function SeatingPlannerPage() {
                   value={unseatedSearch}
                   onChange={(e) => setUnseatedSearch(e.target.value)}
                   placeholder="Search by group or guest name"
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-black placeholder-black focus:outline-none focus:ring-2 focus:ring-black/10 focus:border-black"
+                  className="w-full admin-input"
                   aria-label="Search unseated groups"
                 />
               </div>

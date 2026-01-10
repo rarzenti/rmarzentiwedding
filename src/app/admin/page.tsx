@@ -339,7 +339,7 @@ export default function AdminDashboard() {
               value={searchFilter}
               onChange={(e) => setSearchFilter(e.target.value)}
               placeholder={view === 'GUESTS' ? "Search guests or groups..." : "Search groups or addresses..."}
-              className="px-3 py-1.5 border border-gray-300 rounded-full text-sm text-black bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-600 transition"
+              className="admin-input"
             />
           </div>
         </div>
@@ -371,16 +371,16 @@ export default function AdminDashboard() {
               value={groupName}
               onChange={(e) => setGroupName(e.target.value)}
               placeholder="e.g., Mr. Matthew Arzenti and Mrs. Lauren Arzenti"
-              className="w-full border border-gray-300 rounded-md px-3 py-2 mb-4 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-gray-900 placeholder-gray-500"
+              className="w-full admin-input mb-4"
             />
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
-              <input value={contactEmail} onChange={e=>setContactEmail(e.target.value)} placeholder="Household Email" className="border rounded text-black px-3 py-2" />
-              <input value={contactPhone} onChange={e=>setContactPhone(e.target.value)} placeholder="Phone" className="border rounded text-black px-3 py-2" />
-              <input value={addr.street1} onChange={e=>setAddr(a=>({...a,street1:e.target.value}))} placeholder="Street 1" className="border rounded text-black px-3 py-2" />
-              <input value={addr.street2} onChange={e=>setAddr(a=>({...a,street2:e.target.value}))} placeholder="Street 2" className="border rounded text-black px-3 py-2 md:col-span-2" />
-              <input value={addr.city} onChange={e=>setAddr(a=>({...a,city:e.target.value}))} placeholder="City" className="border rounded text-black px-3 py-2" />
-              <input value={addr.state} onChange={e=>setAddr(a=>({...a,state:e.target.value.toUpperCase().slice(0,2)}))} placeholder="State" className="border rounded text-black px-3 py-2" />
-              <input value={addr.postalCode} onChange={e=>setAddr(a=>({...a,postalCode:e.target.value}))} placeholder="ZIP" className="border rounded text-black px-3 py-2" />
+              <input value={contactEmail} onChange={e=>setContactEmail(e.target.value)} placeholder="Household Email" className="admin-input" />
+              <input value={contactPhone} onChange={e=>setContactPhone(e.target.value)} placeholder="Phone" className="admin-input" />
+              <input value={addr.street1} onChange={e=>setAddr(a=>({...a,street1:e.target.value}))} placeholder="Street 1" className="admin-input" />
+              <input value={addr.street2} onChange={e=>setAddr(a=>({...a,street2:e.target.value}))} placeholder="Street 2" className="admin-input md:col-span-2" />
+              <input value={addr.city} onChange={e=>setAddr(a=>({...a,city:e.target.value}))} placeholder="City" className="admin-input" />
+              <input value={addr.state} onChange={e=>setAddr(a=>({...a,state:e.target.value.toUpperCase().slice(0,2)}))} placeholder="State" className="admin-input" />
+              <input value={addr.postalCode} onChange={e=>setAddr(a=>({...a,postalCode:e.target.value}))} placeholder="ZIP" className="admin-input" />
             </div>
             <div className="space-y-3">
               {members.map((m, idx) => (
@@ -391,7 +391,7 @@ export default function AdminDashboard() {
                     <select
                       value={m.title ?? ""}
                       onChange={(e) => updateMember(idx, { title: e.target.value })}
-                      className="border rounded text-black px-3 py-2"
+                      className="admin-input"
                     >
                       <option value="">—</option>
                       <option>Mr.</option>
@@ -409,7 +409,7 @@ export default function AdminDashboard() {
                     <input
                       value={m.firstName}
                       onChange={(e) => updateMember(idx, { firstName: e.target.value })}
-                      className="border rounded text-black px-3 py-2"
+                      className="admin-input"
                     />
                   </div>
                   {/* Last Name */}
@@ -418,7 +418,7 @@ export default function AdminDashboard() {
                     <input
                       value={m.lastName}
                       onChange={(e) => updateMember(idx, { lastName: e.target.value })}
-                      className="border rounded text-black px-3 py-2"
+                      className="admin-input"
                     />
                   </div>
                   {/* Suffix */}
@@ -427,7 +427,7 @@ export default function AdminDashboard() {
                     <select
                       value={m.suffix ?? ""}
                       onChange={(e) => updateMember(idx, { suffix: e.target.value })}
-                      className="border rounded text-black px-3 py-2"
+                      className="admin-input"
                     >
                       <option value="">—</option>
                       <option>Jr.</option>
@@ -444,7 +444,7 @@ export default function AdminDashboard() {
                     <select
                       value={m.guestOf ?? ''} 
                       onChange={(e) => updateMember(idx, { guestOf: e.target.value as 'RYAN' | 'MARSHA' | '' })}
-                      className="border rounded text-black px-3 py-2"
+                      className="admin-input"
                     >
                       <option value="">—</option>
                       <option value="RYAN">Ryan</option>
@@ -553,7 +553,7 @@ export default function AdminDashboard() {
                           value={groupNameDraft[g.id] ?? g.name ?? ""}
                           onChange={(e) => setDraftFor(g.id, e.target.value)}
                           placeholder="e.g., Matt and Lauren Arzenti"
-                          className="flex-1 border rounded px-2 py-2 text-black placeholder-black"
+                          className="flex-1 admin-input"
                         />
                         <button
                           onClick={() => saveGroupName(g.id)}
@@ -626,7 +626,7 @@ export default function AdminDashboard() {
                             <select
                               value={m.title ?? ""}
                               onChange={(e) => updateGuest(m.id, { title: e.target.value || null })}
-                              className="w-full border rounded px-2 py-2 text-black"
+                              className="w-full admin-input"
                             >
                               <option value="">—</option>
                               <option>Mr.</option>
@@ -647,7 +647,7 @@ export default function AdminDashboard() {
                             <input
                               value={m.firstName}
                               onChange={(e) => updateGuest(m.id, { firstName: e.target.value })}
-                              className="w-full border rounded px-2 py-2 text-black"
+                              className="w-full admin-input"
                             />
                           </div>
                           <div>
@@ -655,7 +655,7 @@ export default function AdminDashboard() {
                             <input
                               value={m.lastName}
                               onChange={(e) => updateGuest(m.id, { lastName: e.target.value })}
-                              className="w-full border rounded px-2 py-2 text-black"
+                              className="w-full admin-input"
                             />
                           </div>
                           <div>
@@ -663,7 +663,7 @@ export default function AdminDashboard() {
                             <select
                               value={m.suffix ?? ""}
                               onChange={(e) => updateGuest(m.id, { suffix: e.target.value || null })}
-                              className="w-full border rounded px-2 py-2 text-black"
+                              className="w-full admin-input"
                             >
                               <option value="">—</option>
                               <option>Jr.</option>
@@ -679,7 +679,7 @@ export default function AdminDashboard() {
                             <select
                               value={m.guestOf ?? ""}
                               onChange={(e) => updateGuest(m.id, { guestOf: e.target.value === '' ? null : e.target.value as 'RYAN' | 'MARSHA' })}
-                              className="w-full border rounded px-2 py-2 text-black"
+                              className="w-full admin-input"
                             >
                               <option value="">—</option>
                               <option value="RYAN">Ryan</option>
@@ -692,7 +692,7 @@ export default function AdminDashboard() {
                               type="number"
                               value={m.tableNumber ?? ""}
                               onChange={(e) => updateGuest(m.id, { tableNumber: e.target.value === "" ? null : Number(e.target.value) })}
-                              className="w-full border rounded px-2 py-2 text-black"
+                              className="w-full admin-input"
                             />
                           </div>
                           <div>
@@ -700,7 +700,7 @@ export default function AdminDashboard() {
                             <select
                               value={m.rsvpStatus}
                               onChange={(e) => updateGuest(m.id, { rsvpStatus: e.target.value as "PENDING" | "YES" | "NO" })}
-                              className="w-full border rounded px-2 py-2 text-black"
+                              className="w-full admin-input"
                             >
                               <option value="PENDING">Pending</option>
                               <option value="YES">Yes</option>
@@ -712,7 +712,7 @@ export default function AdminDashboard() {
                             <select
                               value={m.foodSelection ?? ""}
                               onChange={(e) => updateGuest(m.id, { foodSelection: e.target.value || null })}
-                              className="w-full border rounded px-2 py-2 text-black"
+                              className="w-full admin-input"
                             >
                               <option value="">Select</option>
                               <option value="Chicken">Chicken</option>
@@ -754,27 +754,27 @@ function AddGuestInline({ onAdd }: { onAdd: (d: { title?: string; firstName: str
     <div className="relative grid grid-cols-12 gap-2 items-end pb-6">
       <div className="col-span-2 flex flex-col">
         <label className="block text-sm text-black mb-1">Title</label>
-        <select value={title} onChange={(e) => setTitle(e.target.value)} className="w-full border rounded px-2 py-2 h-11 text-black">
+        <select value={title} onChange={(e) => setTitle(e.target.value)} className="w-full admin-input h-11">
           <option value="">—</option><option>Mr.</option><option>Mrs.</option><option>Ms.</option><option>Miss</option><option>Dr.</option><option>Prof.</option><option>Mx.</option>
         </select>
       </div>
       <div className="col-span-3 flex flex-col">
         <label className="block text-sm text-black mb-1">First Name</label>
-        <input value={firstName} onChange={(e) => setFirstName(e.target.value)} className="w-full border rounded px-2 py-2 h-11 text-black" />
+        <input value={firstName} onChange={(e) => setFirstName(e.target.value)} className="w-full admin-input h-11" />
       </div>
       <div className="col-span-3 flex flex-col">
         <label className="block text-sm text-black mb-1">Last Name</label>
-        <input value={lastName} onChange={(e) => setLastName(e.target.value)} className="w-full border rounded px-2 py-2 h-11 text-black" />
+        <input value={lastName} onChange={(e) => setLastName(e.target.value)} className="w-full admin-input h-11" />
       </div>
       <div className="col-span-2 flex flex-col">
         <label className="block text-sm text-black mb-1">Suffix</label>
-        <select value={suffix} onChange={(e) => setSuffix(e.target.value)} className="w-full border rounded px-2 py-2 h-11 text-black">
+        <select value={suffix} onChange={(e) => setSuffix(e.target.value)} className="w-full admin-input h-11">
           <option value="">—</option><option>Jr.</option><option>Sr.</option><option>II</option><option>III</option><option>IV</option><option>V</option>
         </select>
       </div>
       <div className="col-span-2 flex flex-col">
         <label className="block text-sm text-black mb-1">Guest Of</label>
-        <select value={guestOf} onChange={(e) => setGuestOf(e.target.value as '' | 'RYAN' | 'MARSHA')} className="w-full border rounded px-2 py-2 h-11 text-black">
+        <select value={guestOf} onChange={(e) => setGuestOf(e.target.value as '' | 'RYAN' | 'MARSHA')} className="w-full admin-input h-11">
           <option value="">—</option><option value="RYAN">Ryan</option><option value="MARSHA">Marsha</option>
         </select>
       </div>
@@ -817,16 +817,16 @@ function AddressRow({ group, onUpdate }: { group: GroupItem; onUpdate: (p: Parti
   return (
         <tr className="border-t align-top">
       <td className="p-2 font-medium text-black w-48">{group.name||'Untitled'}<div className="text-xs text-gray-500">{group.guests.length} guest{group.guests.length===1?'':'s'}</div></td>
-      <td className="p-2 w-56 text-black">{editing ? <input value={form.email} onChange={e=>setForm(f=>({...f,email:e.target.value}))} placeholder="email@example.com" className="w-full border border-gray-300 rounded px-2 py-1 text-gray-900 bg-white placeholder-gray-500" /> : (group.email||<span className="text-gray-400">—</span>)}</td>
-      <td className="p-2 w-40 text-black">{editing ? <input value={form.phone} onChange={e=>setForm(f=>({...f,phone:e.target.value}))} placeholder="(555) 123-4567" className="w-full border border-gray-300 rounded px-2 py-1 text-gray-900 bg-white placeholder-gray-500" /> : (group.phone||<span className="text-gray-400">—</span>)}</td>
+      <td className="p-2 w-56 text-black">{editing ? <input value={form.email} onChange={e=>setForm(f=>({...f,email:e.target.value}))} placeholder="email@example.com" className="w-full admin-input-sm" /> : (group.email||<span className="text-gray-400">—</span>)}</td>
+      <td className="p-2 w-40 text-black">{editing ? <input value={form.phone} onChange={e=>setForm(f=>({...f,phone:e.target.value}))} placeholder="(555) 123-4567" className="w-full admin-input-sm" /> : (group.phone||<span className="text-gray-400">—</span>)}</td>
       <td className="p-2">
         {editing ? (
           <div className="grid grid-cols-2 gap-1">
-            <input placeholder="Street1" value={form.street1} onChange={e=>setForm(f=>({...f,street1:e.target.value}))} className="border border-gray-300 rounded px-1 py-1 col-span-2 text-gray-900 bg-white placeholder-gray-500" />
-            <input placeholder="Street2" value={form.street2} onChange={e=>setForm(f=>({...f,street2:e.target.value}))} className="border border-gray-300 rounded px-1 py-1 col-span-2 text-gray-900 bg-white placeholder-gray-500" />
-            <input placeholder="City" value={form.city} onChange={e=>setForm(f=>({...f,city:e.target.value}))} className="border border-gray-300 rounded px-1 py-1 text-gray-900 bg-white placeholder-gray-500" />
-            <input placeholder="State" value={form.state} onChange={e=>setForm(f=>({...f,state:e.target.value.toUpperCase().slice(0,2)}))} className="border border-gray-300 rounded px-1 py-1 text-gray-900 bg-white placeholder-gray-500" />
-            <input placeholder="ZIP" value={form.postalCode} onChange={e=>setForm(f=>({...f,postalCode:e.target.value}))} className="border border-gray-300 rounded px-1 py-1 col-span-2 text-gray-900 bg-white placeholder-gray-500" />
+            <input placeholder="Street1" value={form.street1} onChange={e=>setForm(f=>({...f,street1:e.target.value}))} className="admin-input-sm col-span-2" />
+            <input placeholder="Street2" value={form.street2} onChange={e=>setForm(f=>({...f,street2:e.target.value}))} className="admin-input-sm col-span-2" />
+            <input placeholder="City" value={form.city} onChange={e=>setForm(f=>({...f,city:e.target.value}))} className="admin-input-sm" />
+            <input placeholder="State" value={form.state} onChange={e=>setForm(f=>({...f,state:e.target.value.toUpperCase().slice(0,2)}))} className="admin-input-sm" />
+            <input placeholder="ZIP" value={form.postalCode} onChange={e=>setForm(f=>({...f,postalCode:e.target.value}))} className="admin-input-sm col-span-2" />
           </div>
         ) : (
           <div className="text-xs text-gray-900 whitespace-pre-line">{[group.street1, group.street2, [group.city, group.state].filter(Boolean).join(', '), group.postalCode].filter(Boolean).join('\n') || <span className="text-gray-400">—</span>}</div>
