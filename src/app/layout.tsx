@@ -8,6 +8,9 @@ import {
 } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/shared/Navbar";
+import { Analytics } from "@vercel/analytics/next";
+
+
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
