@@ -1212,15 +1212,14 @@ function GroupCard({
   onSaveName: () => void;
   children?: React.ReactNode;
 }) {
-  const [swipeX, setSwipeX] = useState(0);
-  const [isHolding, setIsHolding] = useState(false);
+  const [revealAmount, setRevealAmount] = useState(0); // 0 to 1, how much actions are revealed
   const cardRef = useRef<HTMLDivElement>(null);
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
-  const longPressTimer = useRef<NodeJS.Timeout | null>(null);
-  const hapticTimer = useRef<NodeJS.Timeout | null>(null);
-  const isLongPress = useRef(false);
-  const isSwiping = useRef(false);
+  const currentReveal = useRef(0);
+  const isDragging = useRef(false);
+
+  const ACTION_WIDTH = 120; // Total width of action buttons
 
   // Click outside to close expanded/swiped state
   useEffect(() => {
@@ -1229,13 +1228,13 @@ function GroupCard({
         if (expanded) {
           onToggleExpand();
         }
-        if (swipeX !== 0) {
-          setSwipeX(0);
+        if (revealAmount > 0) {
+          setRevealAmount(0);
         }
       }
     };
 
-    if (expanded || swipeX !== 0) {
+    if (expanded || revealAmount > 0) {
       document.addEventListener('mousedown', handleClickOutside);
       document.addEventListener('touchstart', handleClickOutside);
       return () => {
@@ -1243,117 +1242,93 @@ function GroupCard({
         document.removeEventListener('touchstart', handleClickOutside);
       };
     }
-  }, [expanded, swipeX, onToggleExpand]);
-
-  const clearTimers = useCallback(() => {
-    if (longPressTimer.current) {
-      clearTimeout(longPressTimer.current);
-      longPressTimer.current = null;
-    }
-    if (hapticTimer.current) {
-      clearTimeout(hapticTimer.current);
-      hapticTimer.current = null;
-    }
-    setIsHolding(false);
-  }, []);
+  }, [expanded, revealAmount, onToggleExpand]);
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
     touchStartY.current = e.touches[0].clientY;
-    isLongPress.current = false;
-    isSwiping.current = false;
-    
-    // At 500ms, show visual feedback (slight scale + vibrate)
-    hapticTimer.current = setTimeout(() => {
-      setIsHolding(true);
-      if (navigator.vibrate) navigator.vibrate(30);
-    }, 500);
-    
-    // At 1000ms, actually trigger edit mode
-    longPressTimer.current = setTimeout(() => {
-      isLongPress.current = true;
-      setIsHolding(false);
-      if (navigator.vibrate) navigator.vibrate(50);
-      onToggleExpand();
-    }, 1000);
-  }, [onToggleExpand]);
+    currentReveal.current = revealAmount;
+    isDragging.current = false;
+  }, [revealAmount]);
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
     const deltaX = e.touches[0].clientX - touchStartX.current;
     const deltaY = e.touches[0].clientY - touchStartY.current;
     
-    // Cancel long press if moving significantly
-    if (Math.abs(deltaX) > 10 || Math.abs(deltaY) > 10) {
-      clearTimers();
-      
-      // Mark as swiping if horizontal movement
-      if (Math.abs(deltaX) > Math.abs(deltaY)) {
-        isSwiping.current = true;
-      }
+    // Only handle horizontal swipes
+    if (!isDragging.current && Math.abs(deltaX) > 10 && Math.abs(deltaX) > Math.abs(deltaY)) {
+      isDragging.current = true;
     }
     
-    // Only allow left swipe (negative deltaX) and limit movement
-    if (deltaX < 0 && Math.abs(deltaY) < 30) {
-      setSwipeX(Math.max(deltaX, -120));
+    if (isDragging.current) {
+      // Convert pixel delta to reveal amount (0-1)
+      // Negative deltaX = swipe left = reveal actions
+      // Positive deltaX = swipe right = hide actions
+      const newReveal = currentReveal.current - (deltaX / ACTION_WIDTH);
+      setRevealAmount(Math.max(0, Math.min(1, newReveal)));
     }
-  }, [clearTimers]);
+  }, []);
 
   const handleTouchEnd = useCallback(() => {
-    clearTimers();
-    
-    // If swiped far enough, lock into delete position
-    if (swipeX < -60) {
-      setSwipeX(-100);
+    // Snap to fully open or closed
+    if (revealAmount > 0.3) {
+      setRevealAmount(1);
     } else {
-      setSwipeX(0);
+      setRevealAmount(0);
     }
-  }, [swipeX, clearTimers]);
+    isDragging.current = false;
+  }, [revealAmount]);
+
+  const handleEditClick = () => {
+    setRevealAmount(0);
+    onToggleExpand();
+  };
 
   const handleDeleteClick = () => {
     if (confirm("Delete this group and all its guests?")) {
       onDelete();
     }
-    setSwipeX(0);
+    setRevealAmount(0);
   };
 
-  // Handle tap on card (when not swiping) - toggle expand
-  const handleCardClick = useCallback(() => {
-    // If swiped, reset instead
-    if (swipeX !== 0) {
-      setSwipeX(0);
-      return;
-    }
-    // Don't trigger if we just did a long press
-    if (isLongPress.current) {
-      isLongPress.current = false;
-      return;
-    }
-  }, [swipeX]);
+  // Calculate the actual pixel offset for the action buttons
+  const actionOffset = revealAmount * ACTION_WIDTH;
 
   return (
     <div ref={cardRef} className="relative overflow-hidden rounded-lg">
-      {/* Delete button revealed by swipe (mobile) */}
+      {/* Action buttons that slide in from the right (mobile only) */}
       <div 
-        className="absolute inset-y-0 right-0 w-24 bg-red-500 flex items-center justify-center sm:hidden cursor-pointer active:bg-red-600"
-        onClick={handleDeleteClick}
+        className="absolute inset-y-0 right-0 flex sm:hidden"
+        style={{ 
+          transform: `translateX(${ACTION_WIDTH - actionOffset}px)`,
+          transition: isDragging.current ? 'none' : 'transform 0.3s ease-out'
+        }}
       >
-        <TrashIcon className="h-7 w-7 text-white" />
+        {/* Edit button */}
+        <button
+          onClick={handleEditClick}
+          className="w-[60px] bg-blue-500 flex items-center justify-center active:bg-blue-600"
+        >
+          <PencilIcon className="h-6 w-6 text-white" />
+        </button>
+        {/* Delete button */}
+        <button
+          onClick={handleDeleteClick}
+          className="w-[60px] bg-red-500 flex items-center justify-center active:bg-red-600"
+        >
+          <TrashIcon className="h-6 w-6 text-white" />
+        </button>
       </div>
       
-      {/* Main card content */}
+      {/* Main card content - stays in place, buttons overlay from right */}
       <div 
-        className={`border rounded bg-white p-4 relative transition-transform ${isHolding ? 'scale-[1.02] shadow-lg' : ''}`}
-        style={{ 
-          transform: `translateX(${swipeX}px)${isHolding ? ' scale(1.02)' : ''}`, 
-          transition: swipeX === 0 && !isHolding ? 'transform 0.3s ease-out, box-shadow 0.2s' : 'box-shadow 0.2s'
-        }}
+        className="border rounded bg-white p-4 relative"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-        onClick={handleCardClick}
       >
         <div className="flex items-start justify-between">
-          <div className="flex-1 mr-3">
+          <div className="flex-1 mr-3" style={{ marginRight: revealAmount > 0 ? `${actionOffset + 12}px` : undefined }}>
             {expanded ? (
               <div className="flex items-center gap-2">
                 <input
