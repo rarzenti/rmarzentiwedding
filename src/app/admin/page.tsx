@@ -345,6 +345,24 @@ export default function AdminDashboard() {
       }
     }
     
+    // Sort alphabetically by first guest's last name, then first name
+    filtered = [...filtered].sort((a, b) => {
+      const aGuest = a.guests[0];
+      const bGuest = b.guests[0];
+      
+      // Handle groups with no guests
+      if (!aGuest && !bGuest) return 0;
+      if (!aGuest) return 1;
+      if (!bGuest) return -1;
+      
+      // Compare by last name first
+      const lastNameCompare = (aGuest.lastName || '').localeCompare(bGuest.lastName || '');
+      if (lastNameCompare !== 0) return lastNameCompare;
+      
+      // Then by first name
+      return (aGuest.firstName || '').localeCompare(bGuest.firstName || '');
+    });
+    
     return filtered;
   }, [groups, view, guestOfFilter, searchFilter]);
 
@@ -556,67 +574,93 @@ export default function AdminDashboard() {
             </div>
           ) : (
             filteredGroups.map((g) => (
-              <div key={g.id} className="border rounded bg-white p-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1 mr-3">
-                    {expanded[g.id] ? (
-                      <div className="flex items-center gap-2">
-                        <input
-                          value={groupNameDraft[g.id] ?? g.name ?? ""}
-                          onChange={(e) => setDraftFor(g.id, e.target.value)}
-                          placeholder="e.g., Matt and Lauren Arzenti"
-                          className="flex-1 admin-input font-medium"
-                          autoFocus
-                        />
-                        {(groupNameDraft[g.id] ?? g.name ?? "") !== (g.name ?? "") && (
-                          <button
-                            onClick={() => saveGroupName(g.id)}
-                            className="text-xs px-2 py-1 rounded bg-blue-600 text-white hover:bg-blue-700"
-                          >
-                            Save
-                          </button>
-                        )}
-                      </div>
-                    ) : (
-                      <p className="font-medium text-black truncate">{g.name || "Untitled Group"}</p>
-                    )}
-                    <p className="text-sm text-gray-600">{g.guests.length} guest{g.guests.length === 1 ? "" : "s"}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => setExpanded((e) => ({ ...e, [g.id]: !e[g.id] }))}
-                      className="p-2 rounded border border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white transition-colors"
-                    >
-                      <PencilIcon className="h-4 w-4" />
-                    </button>
-                    <button onClick={() => deleteGroup(g.id)} className="p-2 rounded border border-red-600 text-red-600 hover:bg-red-600 hover:text-white transition-colors">
-                      <TrashIcon className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-
-               {/* Guest names preview spanning full card width - first names only */}
-               {g.guests.length > 0 && (
-                 <p className="mt-2 text-sm text-gray-700 break-words">
-                   {g.guests.map((m) => m.firstName).join(", ")}
-                 </p>
-               )}
-
+              <GroupCard
+                key={g.id}
+                group={g}
+                expanded={expanded[g.id] ?? false}
+                groupNameDraft={groupNameDraft[g.id]}
+                onToggleExpand={() => setExpanded((e) => ({ ...e, [g.id]: !e[g.id] }))}
+                onDelete={() => deleteGroup(g.id)}
+                onNameChange={(val) => setDraftFor(g.id, val)}
+                onSaveName={() => saveGroupName(g.id)}
+              >
                 {expanded[g.id] && (
                   <div className="mt-4 space-y-3">
 
                     {/* Guests list */}
                     {g.guests.map((m, idx) => (
-                      <GuestCard
+                      <div
                         key={m.id}
-                        guest={m}
-                        groupId={g.id}
-                        index={idx}
-                        totalGuests={g.guests.length}
-                        onEdit={() => { setEditingGuest(m); setEditingGroupId(g.id); }}
-                        onDelete={() => deleteGuest(g.id, m.id)}
-                        onReorder={(direction) => reorderGuest(g.id, m.id, direction)}
-                      />
+                        className="rounded-lg border bg-white p-4 hover:shadow-md transition-all"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            {/* Reorder buttons */}
+                            <div className="flex flex-col gap-0.5">
+                              <button
+                                type="button"
+                                onClick={() => reorderGuest(g.id, m.id, 'up')}
+                                disabled={idx === 0}
+                                className={`p-1 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors`}
+                                title="Move up"
+                              >
+                                <ChevronUpIcon className="h-4 w-4" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => reorderGuest(g.id, m.id, 'down')}
+                                disabled={idx === g.guests.length - 1}
+                                className={`p-1 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors`}
+                                title="Move down"
+                              >
+                                <ChevronDownIcon className="h-4 w-4" />
+                              </button>
+                            </div>
+                            {m.rsvpStatus === "YES" ? (
+                              <CheckCircleIcon className="h-6 w-6 text-green-600" />
+                            ) : m.rsvpStatus === "NO" ? (
+                              <XCircleIcon className="h-6 w-6 text-red-600" />
+                            ) : (
+                              <ClockIcon className="h-6 w-6 text-gray-400" />
+                            )}
+                            <div>
+                              <p className="font-medium text-gray-900">
+                                {m.title ? `${m.title} ` : ""}{m.firstName} {m.lastName}{m.suffix ? ` ${m.suffix}` : ""}
+                              </p>
+                              <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                {m.isChild && (
+                                  <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">Child</span>
+                                )}
+                                {m.guestOf && (
+                                  <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">{m.guestOf === 'RYAN' ? "Ryan's" : "Marsha's"} guest</span>
+                                )}
+                                {m.foodSelection && (
+                                  <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">{m.foodSelection}</span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => { setEditingGuest(m); setEditingGroupId(g.id); }}
+                              className="p-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+                              title="Edit guest"
+                            >
+                              <PencilIcon className="h-4 w-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => { if (confirm("Remove this guest from the group?")) deleteGuest(g.id, m.id); }}
+                              className="p-2 rounded-lg border border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400 transition-colors"
+                              title="Delete guest"
+                            >
+                              <TrashIcon className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
                     ))}
 
                     {/* Add Guest - small + button */}
@@ -632,7 +676,7 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                 )}
-              </div>
+              </GroupCard>
             ))
           )}
         </section>
@@ -1142,23 +1186,25 @@ function AddressRow({ group, onUpdate }: { group: GroupItem; onUpdate: (p: Parti
   );
 }
 
-// Swipeable Guest Card component with mobile gestures
-function GuestCard({ 
-  guest, 
-  groupId, 
-  index, 
-  totalGuests, 
-  onEdit, 
-  onDelete, 
-  onReorder 
+// Swipeable Group Card component with mobile gestures
+function GroupCard({ 
+  group,
+  expanded,
+  groupNameDraft,
+  onToggleExpand,
+  onDelete,
+  onNameChange,
+  onSaveName,
+  children
 }: { 
-  guest: GroupItem["guests"][number];
-  groupId: string;
-  index: number;
-  totalGuests: number;
-  onEdit: () => void;
+  group: GroupItem;
+  expanded: boolean;
+  groupNameDraft: string | undefined;
+  onToggleExpand: () => void;
   onDelete: () => void;
-  onReorder: (direction: 'up' | 'down') => void;
+  onNameChange: (val: string) => void;
+  onSaveName: () => void;
+  children?: React.ReactNode;
 }) {
   const [swipeX, setSwipeX] = useState(0);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -1177,9 +1223,9 @@ function GuestCard({
       isLongPress.current = true;
       // Vibrate if supported
       if (navigator.vibrate) navigator.vibrate(50);
-      onEdit();
+      onToggleExpand();
     }, 500);
-  }, [onEdit]);
+  }, [onToggleExpand]);
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
     const deltaX = e.touches[0].clientX - touchStartX.current;
@@ -1217,7 +1263,7 @@ function GuestCard({
   }, [swipeX]);
 
   const handleDeleteClick = () => {
-    if (confirm("Remove this guest from the group?")) {
+    if (confirm("Delete this group and all its guests?")) {
       onDelete();
     }
     setSwipeX(0);
@@ -1241,85 +1287,68 @@ function GuestCard({
       
       {/* Main card content */}
       <div 
-        className="rounded-lg border bg-white p-4 hover:shadow-md transition-all relative"
-        style={{ transform: `translateX(${swipeX}px)` }}
+        className="border rounded bg-white p-4 relative"
+        style={{ transform: `translateX(${swipeX}px)`, transition: swipeX === 0 ? 'transform 0.2s' : 'none' }}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
         onClick={() => { if (swipeX !== 0) resetSwipe(); }}
       >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            {/* Reorder buttons */}
-            <div className="flex flex-col gap-0.5">
-              <button
-                onClick={(e) => { e.stopPropagation(); onReorder('up'); }}
-                disabled={index === 0}
-                className="p-1 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                title="Move up"
-              >
-                <ChevronUpIcon className="h-4 w-4" />
-              </button>
-              <button
-                onClick={(e) => { e.stopPropagation(); onReorder('down'); }}
-                disabled={index === totalGuests - 1}
-                className="p-1 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                title="Move down"
-              >
-                <ChevronDownIcon className="h-4 w-4" />
-              </button>
-            </div>
-            {guest.rsvpStatus === "YES" ? (
-              <CheckCircleIcon className="h-6 w-6 text-green-600" />
-            ) : guest.rsvpStatus === "NO" ? (
-              <XCircleIcon className="h-6 w-6 text-red-600" />
-            ) : (
-              <ClockIcon className="h-6 w-6 text-gray-400" />
-            )}
-            <div>
-              <p className="font-medium text-gray-900">
-                {guest.title ? `${guest.title} ` : ""}{guest.firstName} {guest.lastName}{guest.suffix ? ` ${guest.suffix}` : ""}
-              </p>
-              <div className="flex items-center gap-2 mt-1 flex-wrap">
-                {guest.isChild && (
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">Child</span>
-                )}
-                {guest.guestOf && (
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">{guest.guestOf === 'RYAN' ? "Ryan's" : "Marsha's"} guest</span>
-                )}
-                {guest.foodSelection && (
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">{guest.foodSelection}</span>
+        <div className="flex items-start justify-between">
+          <div className="flex-1 mr-3">
+            {expanded ? (
+              <div className="flex items-center gap-2">
+                <input
+                  value={groupNameDraft ?? group.name ?? ""}
+                  onChange={(e) => onNameChange(e.target.value)}
+                  placeholder="e.g., Matt and Lauren Arzenti"
+                  className="flex-1 admin-input font-medium"
+                  autoFocus
+                  onClick={(e) => e.stopPropagation()}
+                />
+                {(groupNameDraft ?? group.name ?? "") !== (group.name ?? "") && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onSaveName(); }}
+                    className="text-xs px-2 py-1 rounded bg-blue-600 text-white hover:bg-blue-700"
+                  >
+                    Save
+                  </button>
                 )}
               </div>
-            </div>
+            ) : (
+              <p className="font-medium text-black truncate">{group.name || "Untitled Group"}</p>
+            )}
+            <p className="text-sm text-gray-600">{group.guests.length} guest{group.guests.length === 1 ? "" : "s"}</p>
           </div>
           
           {/* Desktop buttons - hidden on mobile */}
           <div className="hidden sm:flex items-center gap-2">
             <button
-              onClick={onEdit}
-              className="p-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
-              title="Edit guest"
+              onClick={(e) => { e.stopPropagation(); onToggleExpand(); }}
+              className="p-2 rounded border border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white transition-colors"
             >
               <PencilIcon className="h-4 w-4" />
             </button>
-            <button
-              onClick={() => { if (confirm("Remove this guest from the group?")) onDelete(); }}
-              className="p-2 rounded-lg border border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400 transition-colors"
-              title="Delete guest"
+            <button 
+              onClick={(e) => { e.stopPropagation(); onDelete(); }} 
+              className="p-2 rounded border border-red-600 text-red-600 hover:bg-red-600 hover:text-white transition-colors"
             >
               <TrashIcon className="h-4 w-4" />
             </button>
           </div>
           
-          {/* Mobile hint - shown only on mobile when not swiped */}
-          {swipeX === 0 && (
-            <div className="sm:hidden text-xs text-gray-400 text-right">
-              <p>Hold to edit</p>
-              <p>Swipe to delete</p>
-            </div>
-          )}
+
         </div>
+
+        {/* Guest names preview spanning full card width - first names only */}
+        {group.guests.length > 0 && !expanded && (
+          <p className="mt-2 text-sm text-gray-700 break-words">
+            {group.guests.map((m) => m.firstName).join(", ")}
+          </p>
+        )}
+
+        {/* Children (expanded content) */}
+        {children}
       </div>
     </div>
   );
