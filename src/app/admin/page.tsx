@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { PlusIcon, MinusIcon, TrashIcon } from "@heroicons/react/24/outline";
+import { useEffect, useMemo, useState, useRef, useCallback } from "react";
+import { PlusIcon, MinusIcon, TrashIcon, ChevronUpIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
 import { PencilIcon } from "@heroicons/react/24/outline";
 import { CheckCircleIcon, XCircleIcon, ClockIcon } from "@heroicons/react/24/solid";
+import { MEAL_OPTIONS, TITLE_OPTIONS, SUFFIX_OPTIONS, RSVP_STATUS_OPTIONS, GUEST_OF_OPTIONS } from "@/lib/config";
 
 interface MemberDraft {
   title?: string;
@@ -193,8 +194,12 @@ export default function AdminDashboard() {
   const [groupNameDraft, setGroupNameDraft] = useState<Record<string, string>>({});
   const setDraftFor = (id: string, val: string) => setGroupNameDraft((p) => ({ ...p, [id]: val }));
 
-  // Control visibility of inline Add Guest form per group
-  const [showAddForm, setShowAddForm] = useState<Record<string, boolean>>({});
+  // Add Guest modal state - tracks which group to add to
+  const [addingToGroupId, setAddingToGroupId] = useState<string | null>(null);
+
+  // Guest edit modal state
+  const [editingGuest, setEditingGuest] = useState<GroupItem["guests"][number] | null>(null);
+  const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
 
   const saveGroupName = async (groupId: string) => {
     const draft = (groupNameDraft[groupId] ?? "").trim();
@@ -248,7 +253,7 @@ export default function AdminDashboard() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to add guest");
       setGroups((prev) => prev.map((g) => (g.id === groupId ? { ...g, guests: [...g.guests, data.guest] } : g)));
-      setShowAddForm((prev) => ({ ...prev, [groupId]: false }));
+      setAddingToGroupId(null);
     } catch (e) {
       if (e instanceof Error) alert(e.message || "Failed to add guest");
       else alert("Failed to add guest");
@@ -265,6 +270,43 @@ export default function AdminDashboard() {
     } catch (e) {
       if (e instanceof Error) alert(e.message || "Failed to delete guest");
       else alert("Failed to delete guest");
+    }
+  };
+
+  const reorderGuest = async (groupId: string, guestId: string, direction: 'up' | 'down') => {
+    const group = groups.find(g => g.id === groupId);
+    if (!group) return;
+    
+    const currentIndex = group.guests.findIndex(g => g.id === guestId);
+    if (currentIndex === -1) return;
+    
+    const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+    if (newIndex < 0 || newIndex >= group.guests.length) return;
+    
+    // Reorder locally first for immediate feedback
+    const newGuests = [...group.guests];
+    [newGuests[currentIndex], newGuests[newIndex]] = [newGuests[newIndex], newGuests[currentIndex]];
+    
+    // Update local state immediately
+    setGroups(prev => prev.map(g => g.id === groupId ? { ...g, guests: newGuests } : g));
+    
+    // Save the new order to the server
+    try {
+      const guestIds = newGuests.map(g => g.id);
+      const res = await fetch(`/api/groups/${groupId}/reorder`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ guestIds }),
+      });
+      if (!res.ok) {
+        // Revert on error
+        setGroups(prev => prev.map(g => g.id === groupId ? { ...g, guests: group.guests } : g));
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to reorder');
+      }
+    } catch (e) {
+      // Already reverted above if needed
+      console.error('Reorder failed:', e);
     }
   };
 
@@ -516,8 +558,28 @@ export default function AdminDashboard() {
             filteredGroups.map((g) => (
               <div key={g.id} className="border rounded bg-white p-4">
                 <div className="flex items-start justify-between">
-                  <div>
-                    <p className="font-medium text-black">{g.name || "Untitled Group"}</p>
+                  <div className="flex-1 mr-3">
+                    {expanded[g.id] ? (
+                      <div className="flex items-center gap-2">
+                        <input
+                          value={groupNameDraft[g.id] ?? g.name ?? ""}
+                          onChange={(e) => setDraftFor(g.id, e.target.value)}
+                          placeholder="e.g., Matt and Lauren Arzenti"
+                          className="flex-1 admin-input font-medium"
+                          autoFocus
+                        />
+                        {(groupNameDraft[g.id] ?? g.name ?? "") !== (g.name ?? "") && (
+                          <button
+                            onClick={() => saveGroupName(g.id)}
+                            className="text-xs px-2 py-1 rounded bg-blue-600 text-white hover:bg-blue-700"
+                          >
+                            Save
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="font-medium text-black truncate">{g.name || "Untitled Group"}</p>
+                    )}
                     <p className="text-sm text-gray-600">{g.guests.length} guest{g.guests.length === 1 ? "" : "s"}</p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -533,255 +595,387 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-               {/* Guest names preview spanning full card width */}
+               {/* Guest names preview spanning full card width - first names only */}
                {g.guests.length > 0 && (
                  <p className="mt-2 text-sm text-gray-700 break-words">
-                   {g.guests.map((m) => `${m.title ? m.title + " " : ""}${m.firstName} ${m.lastName}`).join(", ")}
+                   {g.guests.map((m) => m.firstName).join(", ")}
                  </p>
                )}
 
                 {expanded[g.id] && (
                   <div className="mt-4 space-y-3">
-                    {/* Group rename section */}
-                    <div className="rounded border bg-white p-3">
-                      <label className="block text-sm text-black mb-1">Group Name</label>
-                      <div className="flex items-end gap-2">
-                        <input
-                          value={groupNameDraft[g.id] ?? g.name ?? ""}
-                          onChange={(e) => setDraftFor(g.id, e.target.value)}
-                          placeholder="e.g., Matt and Lauren Arzenti"
-                          className="flex-1 admin-input"
-                        />
-                        <button
-                          onClick={() => saveGroupName(g.id)}
-                          disabled={(groupNameDraft[g.id] ?? g.name ?? "") === (g.name ?? "")}
-                          className="px-3 py-2 rounded bg-black text-white disabled:opacity-50"
-                          title="Save group name"
-                        >
-                          Save
-                        </button>
-                      </div>
-                    </div>
 
-                    {/* Add new guest to this group */}
-                    <div className="border-2 border-emerald-300 rounded-xl bg-white/90 backdrop-blur-sm p-3">
+                    {/* Guests list */}
+                    {g.guests.map((m, idx) => (
+                      <GuestCard
+                        key={m.id}
+                        guest={m}
+                        groupId={g.id}
+                        index={idx}
+                        totalGuests={g.guests.length}
+                        onEdit={() => { setEditingGuest(m); setEditingGroupId(g.id); }}
+                        onDelete={() => deleteGuest(g.id, m.id)}
+                        onReorder={(direction) => reorderGuest(g.id, m.id, direction)}
+                      />
+                    ))}
+
+                    {/* Add Guest - small + button */}
+                    <div className="flex justify-center pt-2">
                       <button
                         type="button"
-                        onClick={() => setShowAddForm((p) => ({ ...p, [g.id]: !p[g.id] }))}
-                        className="inline-flex items-center gap-2 rounded border border-green-600 text-green-600 px-3 py-2 hover:bg-green-600 hover:text-white transition-colors"
+                        onClick={() => setAddingToGroupId(g.id)}
+                        className="p-2 rounded-full border-2 border-dashed border-gray-300 text-gray-400 hover:border-emerald-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors"
                         title="Add Guest"
                       >
-                        <PlusIcon className="h-4 w-4" />
-                        Add Guest
+                        <PlusIcon className="h-5 w-5" />
                       </button>
-                      {showAddForm[g.id] && (
-                        <div className="mt-3">
-                          <AddGuestInline onAdd={(d) => addGuestToGroup(g.id, d)} />
-                          <div className="mt-2 flex justify-end">
-                            <button
-                              type="button"
-                              onClick={() => setShowAddForm((p) => ({ ...p, [g.id]: false }))}
-                              className="px-3 py-2 rounded border border-red-600 text-red-700 hover:bg-red-50"
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                        </div>
-                      )}
                     </div>
-
-                    {/* Guests editor */}
-                    {g.guests.map((m) => (
-                      <div key={m.id} className="rounded border bg-white p-3">
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center gap-2">
-                            {m.rsvpStatus === "YES" ? (
-                              <CheckCircleIcon className="h-5 w-5 text-green-600" />
-                            ) : m.rsvpStatus === "NO" ? (
-                              <XCircleIcon className="h-5 w-5 text-red-600" />
-                            ) : (
-                              <ClockIcon className="h-5 w-5 text-gray-500" />
-                            )}
-                            <p className="font-medium text-black">{m.title ? `${m.title} ` : ""}{m.firstName} {m.lastName}</p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            {m.isChild ? (
-                              <span className="text-xs px-2 py-1 rounded-full border border-amber-300 bg-amber-50 text-amber-800">Child</span>
-                            ) : null}
-                            {m.foodSelection ? (
-                              <span className="text-xs px-2 py-1 rounded-full border bg-gray-50 text-gray-800">
-                                {m.foodSelection}
-                              </span>
-                            ) : (
-                              <span className="text-xs text-gray-500">No meal selected</span>
-                            )}
-                          </div>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-7 gap-3 items-end">
-                          <div>
-                            <label className="block text-sm text-black mb-1">Title</label>
-                            <select
-                              value={m.title ?? ""}
-                              onChange={(e) => updateGuest(m.id, { title: e.target.value || null })}
-                              className="w-full admin-input"
-                            >
-                              <option value="">—</option>
-                              <option>Mr.</option>
-                              <option>Mrs.</option>
-                              <option>Ms.</option>
-                              <option>Miss</option>
-                              <option>Dr.</option>
-                              <option>Prof.</option>
-                              <option>Mx.</option>
-                            </select>
-                            <label className="mt-2 inline-flex items-center gap-2 text-sm text-black">
-                              <input type="checkbox" checked={!!m.isChild} onChange={(e) => updateGuest(m.id, { isChild: e.target.checked })} />
-                              Child
-                            </label>
-                          </div>
-                          <div>
-                            <label className="block text-sm text-black mb-1">First Name</label>
-                            <input
-                              value={m.firstName}
-                              onChange={(e) => updateGuest(m.id, { firstName: e.target.value })}
-                              className="w-full admin-input"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm text-black mb-1">Last Name</label>
-                            <input
-                              value={m.lastName}
-                              onChange={(e) => updateGuest(m.id, { lastName: e.target.value })}
-                              className="w-full admin-input"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm text-black mb-1">Suffix</label>
-                            <select
-                              value={m.suffix ?? ""}
-                              onChange={(e) => updateGuest(m.id, { suffix: e.target.value || null })}
-                              className="w-full admin-input"
-                            >
-                              <option value="">—</option>
-                              <option>Jr.</option>
-                              <option>Sr.</option>
-                              <option>II</option>
-                              <option>III</option>
-                              <option>IV</option>
-                              <option>V</option>
-                            </select>
-                          </div>
-                          <div>
-                            <label className="block text-sm text-black mb-1">Guest Of</label>
-                            <select
-                              value={m.guestOf ?? ""}
-                              onChange={(e) => updateGuest(m.id, { guestOf: e.target.value === '' ? null : e.target.value as 'RYAN' | 'MARSHA' })}
-                              className="w-full admin-input"
-                            >
-                              <option value="">—</option>
-                              <option value="RYAN">Ryan</option>
-                              <option value="MARSHA">Marsha</option>
-                            </select>
-                          </div>
-                          <div>
-                            <label className="block text-sm text-black mb-1">Table</label>
-                            <input
-                              type="number"
-                              value={m.tableNumber ?? ""}
-                              onChange={(e) => updateGuest(m.id, { tableNumber: e.target.value === "" ? null : Number(e.target.value) })}
-                              className="w-full admin-input"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm text-black mb-1">RSVP</label>
-                            <select
-                              value={m.rsvpStatus}
-                              onChange={(e) => updateGuest(m.id, { rsvpStatus: e.target.value as "PENDING" | "YES" | "NO" })}
-                              className="w-full admin-input"
-                            >
-                              <option value="PENDING">Pending</option>
-                              <option value="YES">Yes</option>
-                              <option value="NO">No</option>
-                            </select>
-                          </div>
-                          <div>
-                            <label className="block text-sm text-black mb-1">Dinner</label>
-                            <select
-                              value={m.foodSelection ?? ""}
-                              onChange={(e) => updateGuest(m.id, { foodSelection: e.target.value || null })}
-                              className="w-full admin-input"
-                            >
-                              <option value="">Select</option>
-                              <option value="Chicken">Chicken</option>
-                              <option value="Beef">Beef</option>
-                              <option value="Fish">Fish</option>
-                              <option value="Vegetarian">Vegetarian</option>
-                            </select>
-                          </div>
-                        </div>
-                        <div className="mt-3 flex justify-end">
-                          <button
-                            onClick={() => deleteGuest(g.id, m.id)}
-                            className="p-2 rounded border border-red-600 text-red-600 hover:bg-red-600 hover:text-white transition-colors"
-                          >
-                            <TrashIcon className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
                   </div>
                 )}
               </div>
             ))
           )}
         </section>
+
+        {/* Guest Edit Modal */}
+        {editingGuest && (
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm">
+            <div className="bg-white w-full sm:max-w-md sm:mx-4 sm:rounded-2xl rounded-t-2xl shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
+              {/* Header */}
+              <div className="bg-gray-900 px-4 py-4 text-white flex items-center justify-between sticky top-0">
+                <div>
+                  <p className="text-xs uppercase tracking-widest text-gray-400">Edit Guest</p>
+                  <h3 className="font-playfair text-xl">{editingGuest.firstName} {editingGuest.lastName}</h3>
+                </div>
+                <button
+                  onClick={() => { setEditingGuest(null); setEditingGroupId(null); }}
+                  className="p-2 hover:bg-gray-800 rounded-lg transition"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              
+              {/* Form */}
+              <div className="p-4 space-y-4">
+                {/* Name Section */}
+                <div className="grid grid-cols-4 gap-2">
+                  <div className="col-span-1">
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Title</label>
+                    <select
+                      value={editingGuest.title ?? ""}
+                      onChange={(e) => setEditingGuest({ ...editingGuest, title: e.target.value || null })}
+                      className="w-full admin-input-sm"
+                    >
+                      <option value="">—</option>
+                      <option>Mr.</option>
+                      <option>Mrs.</option>
+                      <option>Ms.</option>
+                      <option>Miss</option>
+                      <option>Dr.</option>
+                    </select>
+                  </div>
+                  <div className="col-span-3 grid grid-cols-5 gap-2">
+                    <div className="col-span-2">
+                      <label className="block text-xs font-medium text-gray-600 mb-1">First</label>
+                      <input
+                        value={editingGuest.firstName}
+                        onChange={(e) => setEditingGuest({ ...editingGuest, firstName: e.target.value })}
+                        className="w-full admin-input-sm"
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Last</label>
+                      <input
+                        value={editingGuest.lastName}
+                        onChange={(e) => setEditingGuest({ ...editingGuest, lastName: e.target.value })}
+                        className="w-full admin-input-sm"
+                      />
+                    </div>
+                    <div className="col-span-1">
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Suffix</label>
+                      <select
+                        value={editingGuest.suffix ?? ""}
+                        onChange={(e) => setEditingGuest({ ...editingGuest, suffix: e.target.value || null })}
+                        className="w-full admin-input-sm"
+                      >
+                        <option value="">—</option>
+                        <option>Jr.</option>
+                        <option>Sr.</option>
+                        <option>II</option>
+                        <option>III</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Guest Of */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Guest Of</label>
+                  <div className="flex gap-2">
+                    {(['RYAN', 'MARSHA'] as const).map(person => (
+                      <button
+                        key={person}
+                        type="button"
+                        onClick={() => setEditingGuest({ ...editingGuest, guestOf: editingGuest.guestOf === person ? null : person })}
+                        className={`flex-1 py-2 rounded-lg text-sm font-medium transition ${
+                          editingGuest.guestOf === person 
+                            ? 'bg-blue-600 text-white' 
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        {person === 'RYAN' ? "Ryan's Guest" : "Marsha's Guest"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* RSVP Status */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">RSVP Status</label>
+                  <div className="flex gap-2">
+                    {([
+                      { value: 'PENDING', label: 'Pending', color: 'gray' },
+                      { value: 'YES', label: 'Attending', color: 'green' },
+                      { value: 'NO', label: 'Not Attending', color: 'red' },
+                    ] as const).map(status => (
+                      <button
+                        key={status.value}
+                        type="button"
+                        onClick={() => setEditingGuest({ 
+                          ...editingGuest, 
+                          rsvpStatus: status.value,
+                          // Clear meal selection and dietary restrictions when not attending
+                          ...(status.value === 'NO' ? { foodSelection: null, dietaryRestrictions: null } : {})
+                        })}
+                        className={`flex-1 py-2 rounded-lg text-sm font-medium transition ${
+                          editingGuest.rsvpStatus === status.value 
+                            ? status.color === 'green' ? 'bg-green-600 text-white'
+                              : status.color === 'red' ? 'bg-red-600 text-white'
+                              : 'bg-gray-600 text-white'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        {status.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Meal Selection - only show if attending */}
+                {editingGuest.rsvpStatus !== 'NO' && (
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Meal Selection</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {MEAL_OPTIONS.map(meal => (
+                        <button
+                          key={meal.value}
+                          type="button"
+                          onClick={() => setEditingGuest({ ...editingGuest, foodSelection: editingGuest.foodSelection === meal.value ? null : meal.value })}
+                          className={`py-2 px-3 rounded-lg text-sm font-medium transition flex items-center justify-center gap-2 ${
+                            editingGuest.foodSelection === meal.value 
+                              ? 'bg-emerald-600 text-white' 
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                        >
+                          <span>{meal.emoji}</span>
+                          <span>{meal.value}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Child Toggle */}
+                <div className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-lg">
+                  <span className="text-sm font-medium text-gray-700">Child (under 12)</span>
+                  <button
+                    type="button"
+                    onClick={() => setEditingGuest({ ...editingGuest, isChild: !editingGuest.isChild })}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${editingGuest.isChild ? 'bg-amber-500' : 'bg-gray-300'}`}
+                  >
+                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${editingGuest.isChild ? 'translate-x-6' : 'translate-x-1'}`} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="p-4 bg-gray-50 border-t sticky bottom-0">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (editingGuest && editingGroupId) {
+                      await updateGuest(editingGuest.id, {
+                        title: editingGuest.title,
+                        firstName: editingGuest.firstName,
+                        lastName: editingGuest.lastName,
+                        suffix: editingGuest.suffix,
+                        guestOf: editingGuest.guestOf,
+                        rsvpStatus: editingGuest.rsvpStatus,
+                        foodSelection: editingGuest.foodSelection,
+                        isChild: editingGuest.isChild,
+                      });
+                      setEditingGuest(null);
+                      setEditingGroupId(null);
+                    }
+                  }}
+                  className="w-full py-3 bg-black text-white rounded-lg hover:bg-gray-800 font-medium transition"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Add Guest Modal */}
+        {addingToGroupId && (
+          <AddGuestModal
+            onAdd={(d) => addGuestToGroup(addingToGroupId, d)}
+            onClose={() => setAddingToGroupId(null)}
+          />
+        )}
       </main>
   );
 }
 
-// Inline component for quickly adding a guest under a group
-function AddGuestInline({ onAdd }: { onAdd: (d: { title?: string; firstName: string; lastName: string; suffix?: string; guestOf?: 'RYAN' | 'MARSHA'; isChild?: boolean }) => void }) {
+// Modal for adding a new guest to a group
+function AddGuestModal({ onAdd, onClose }: { 
+  onAdd: (d: { title?: string; firstName: string; lastName: string; suffix?: string; guestOf?: 'RYAN' | 'MARSHA'; isChild?: boolean }) => void; 
+  onClose: () => void;
+}) {
   const [title, setTitle] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [suffix, setSuffix] = useState("");
   const [guestOf, setGuestOf] = useState<'' | 'RYAN' | 'MARSHA'>('');
   const [isChild, setIsChild] = useState(false);
+
+  const handleSubmit = () => {
+    const fn = firstName.trim();
+    const ln = lastName.trim();
+    if (!fn || !ln) return;
+    onAdd({ 
+      title: title || undefined, 
+      firstName: fn, 
+      lastName: ln, 
+      suffix: suffix || undefined, 
+      guestOf: guestOf || undefined, 
+      isChild 
+    });
+  };
+
   return (
-    <div className="relative grid grid-cols-12 gap-2 items-end pb-6">
-      <div className="col-span-2 flex flex-col">
-        <label className="block text-sm text-black mb-1">Title</label>
-        <select value={title} onChange={(e) => setTitle(e.target.value)} className="w-full admin-input h-11">
-          <option value="">—</option><option>Mr.</option><option>Mrs.</option><option>Ms.</option><option>Miss</option><option>Dr.</option><option>Prof.</option><option>Mx.</option>
-        </select>
-      </div>
-      <div className="col-span-3 flex flex-col">
-        <label className="block text-sm text-black mb-1">First Name</label>
-        <input value={firstName} onChange={(e) => setFirstName(e.target.value)} className="w-full admin-input h-11" />
-      </div>
-      <div className="col-span-3 flex flex-col">
-        <label className="block text-sm text-black mb-1">Last Name</label>
-        <input value={lastName} onChange={(e) => setLastName(e.target.value)} className="w-full admin-input h-11" />
-      </div>
-      <div className="col-span-2 flex flex-col">
-        <label className="block text-sm text-black mb-1">Suffix</label>
-        <select value={suffix} onChange={(e) => setSuffix(e.target.value)} className="w-full admin-input h-11">
-          <option value="">—</option><option>Jr.</option><option>Sr.</option><option>II</option><option>III</option><option>IV</option><option>V</option>
-        </select>
-      </div>
-      <div className="col-span-2 flex flex-col">
-        <label className="block text-sm text-black mb-1">Guest Of</label>
-        <select value={guestOf} onChange={(e) => setGuestOf(e.target.value as '' | 'RYAN' | 'MARSHA')} className="w-full admin-input h-11">
-          <option value="">—</option><option value="RYAN">Ryan</option><option value="MARSHA">Marsha</option>
-        </select>
-      </div>
-      <div className="absolute left-0 bottom-0">
-        <label className="inline-flex items-center gap-2 text-sm text-black">
-          <input type="checkbox" checked={isChild} onChange={(e) => setIsChild(e.target.checked)} /> Child
-        </label>
-      </div>
-      <div className="col-span-12 flex justify-end mt-2">
-        <button onClick={() => { const fn = firstName.trim(); const ln = lastName.trim(); if (!fn || !ln) return; onAdd({ title: title || undefined, firstName: fn, lastName: ln, suffix: suffix || undefined, guestOf: guestOf || undefined, isChild }); setTitle(""); setFirstName(""); setLastName(""); setSuffix(""); setGuestOf(''); setIsChild(false); }} className="px-4 py-2 rounded bg-black text-white">Add</button>
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm">
+      <div className="bg-white w-full sm:max-w-md sm:mx-4 sm:rounded-2xl rounded-t-2xl shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
+        {/* Header */}
+        <div className="bg-emerald-700 px-4 py-4 text-white flex items-center justify-between sticky top-0">
+          <div>
+            <p className="text-xs uppercase tracking-widest text-emerald-200">New Guest</p>
+            <h2 className="font-semibold text-lg">Add to Group</h2>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-emerald-600 rounded-lg transition">
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Form */}
+        <div className="p-4 space-y-4">
+          {/* Name row */}
+          <div className="grid grid-cols-4 gap-2">
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Title</label>
+              <select value={title} onChange={(e) => setTitle(e.target.value)} className="w-full admin-input-sm h-9">
+                <option value="">—</option>
+                {TITLE_OPTIONS.map(t => <option key={t}>{t}</option>)}
+              </select>
+            </div>
+            <div className="col-span-3">
+              <label className="block text-xs font-medium text-gray-600 mb-1">First Name *</label>
+              <input 
+                value={firstName} 
+                onChange={(e) => setFirstName(e.target.value)} 
+                className="w-full admin-input-sm" 
+                placeholder="First name"
+                autoFocus
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-4 gap-2">
+            <div className="col-span-3">
+              <label className="block text-xs font-medium text-gray-600 mb-1">Last Name *</label>
+              <input 
+                value={lastName} 
+                onChange={(e) => setLastName(e.target.value)} 
+                className="w-full admin-input-sm" 
+                placeholder="Last name"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Suffix</label>
+              <select value={suffix} onChange={(e) => setSuffix(e.target.value)} className="w-full admin-input-sm h-9">
+                <option value="">—</option>
+                {SUFFIX_OPTIONS.map(s => <option key={s}>{s}</option>)}
+              </select>
+            </div>
+          </div>
+
+          {/* Guest Of */}
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Guest Of</label>
+            <div className="flex gap-2">
+              {(['RYAN', 'MARSHA'] as const).map(person => (
+                <button
+                  key={person}
+                  type="button"
+                  onClick={() => setGuestOf(guestOf === person ? '' : person)}
+                  className={`flex-1 py-2 rounded-lg text-sm font-medium transition ${
+                    guestOf === person 
+                      ? 'bg-blue-600 text-white' 
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  {person === 'RYAN' ? "Ryan's Guest" : "Marsha's Guest"}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Child Toggle */}
+          <div className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-lg">
+            <span className="text-sm font-medium text-gray-700">Child (under 12)</span>
+            <button
+              type="button"
+              onClick={() => setIsChild(!isChild)}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isChild ? 'bg-amber-500' : 'bg-gray-300'}`}
+            >
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${isChild ? 'translate-x-6' : 'translate-x-1'}`} />
+            </button>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="p-4 bg-gray-50 border-t sticky bottom-0 flex gap-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 font-medium transition"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={!firstName.trim() || !lastName.trim()}
+            className="flex-1 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Add Guest
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -945,5 +1139,188 @@ function AddressRow({ group, onUpdate }: { group: GroupItem; onUpdate: (p: Parti
         </button>
       </td>
     </tr>
+  );
+}
+
+// Swipeable Guest Card component with mobile gestures
+function GuestCard({ 
+  guest, 
+  groupId, 
+  index, 
+  totalGuests, 
+  onEdit, 
+  onDelete, 
+  onReorder 
+}: { 
+  guest: GroupItem["guests"][number];
+  groupId: string;
+  index: number;
+  totalGuests: number;
+  onEdit: () => void;
+  onDelete: () => void;
+  onReorder: (direction: 'up' | 'down') => void;
+}) {
+  const [swipeX, setSwipeX] = useState(0);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const touchStartX = useRef(0);
+  const touchStartY = useRef(0);
+  const longPressTimer = useRef<NodeJS.Timeout | null>(null);
+  const isLongPress = useRef(false);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+    isLongPress.current = false;
+    
+    // Start long press timer
+    longPressTimer.current = setTimeout(() => {
+      isLongPress.current = true;
+      // Vibrate if supported
+      if (navigator.vibrate) navigator.vibrate(50);
+      onEdit();
+    }, 500);
+  }, [onEdit]);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    const deltaX = e.touches[0].clientX - touchStartX.current;
+    const deltaY = e.touches[0].clientY - touchStartY.current;
+    
+    // Cancel long press if moving
+    if (Math.abs(deltaX) > 10 || Math.abs(deltaY) > 10) {
+      if (longPressTimer.current) {
+        clearTimeout(longPressTimer.current);
+        longPressTimer.current = null;
+      }
+    }
+    
+    // Only allow left swipe (negative deltaX) and limit movement
+    if (deltaX < 0 && Math.abs(deltaY) < 30) {
+      setSwipeX(Math.max(deltaX, -100));
+    }
+  }, []);
+
+  const handleTouchEnd = useCallback(() => {
+    // Clear long press timer
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+    
+    // If swiped far enough, show delete confirm
+    if (swipeX < -60) {
+      setShowDeleteConfirm(true);
+      setSwipeX(-80);
+    } else {
+      setSwipeX(0);
+      setShowDeleteConfirm(false);
+    }
+  }, [swipeX]);
+
+  const handleDeleteClick = () => {
+    if (confirm("Remove this guest from the group?")) {
+      onDelete();
+    }
+    setSwipeX(0);
+    setShowDeleteConfirm(false);
+  };
+
+  const resetSwipe = () => {
+    setSwipeX(0);
+    setShowDeleteConfirm(false);
+  };
+
+  return (
+    <div className="relative overflow-hidden rounded-lg">
+      {/* Delete button revealed by swipe (mobile) */}
+      <div 
+        className="absolute inset-y-0 right-0 w-20 bg-red-500 flex items-center justify-center sm:hidden"
+        onClick={handleDeleteClick}
+      >
+        <TrashIcon className="h-6 w-6 text-white" />
+      </div>
+      
+      {/* Main card content */}
+      <div 
+        className="rounded-lg border bg-white p-4 hover:shadow-md transition-all relative"
+        style={{ transform: `translateX(${swipeX}px)` }}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onClick={() => { if (swipeX !== 0) resetSwipe(); }}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {/* Reorder buttons */}
+            <div className="flex flex-col gap-0.5">
+              <button
+                onClick={(e) => { e.stopPropagation(); onReorder('up'); }}
+                disabled={index === 0}
+                className="p-1 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                title="Move up"
+              >
+                <ChevronUpIcon className="h-4 w-4" />
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); onReorder('down'); }}
+                disabled={index === totalGuests - 1}
+                className="p-1 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                title="Move down"
+              >
+                <ChevronDownIcon className="h-4 w-4" />
+              </button>
+            </div>
+            {guest.rsvpStatus === "YES" ? (
+              <CheckCircleIcon className="h-6 w-6 text-green-600" />
+            ) : guest.rsvpStatus === "NO" ? (
+              <XCircleIcon className="h-6 w-6 text-red-600" />
+            ) : (
+              <ClockIcon className="h-6 w-6 text-gray-400" />
+            )}
+            <div>
+              <p className="font-medium text-gray-900">
+                {guest.title ? `${guest.title} ` : ""}{guest.firstName} {guest.lastName}{guest.suffix ? ` ${guest.suffix}` : ""}
+              </p>
+              <div className="flex items-center gap-2 mt-1 flex-wrap">
+                {guest.isChild && (
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">Child</span>
+                )}
+                {guest.guestOf && (
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">{guest.guestOf === 'RYAN' ? "Ryan's" : "Marsha's"} guest</span>
+                )}
+                {guest.foodSelection && (
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">{guest.foodSelection}</span>
+                )}
+              </div>
+            </div>
+          </div>
+          
+          {/* Desktop buttons - hidden on mobile */}
+          <div className="hidden sm:flex items-center gap-2">
+            <button
+              onClick={onEdit}
+              className="p-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+              title="Edit guest"
+            >
+              <PencilIcon className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => { if (confirm("Remove this guest from the group?")) onDelete(); }}
+              className="p-2 rounded-lg border border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400 transition-colors"
+              title="Delete guest"
+            >
+              <TrashIcon className="h-4 w-4" />
+            </button>
+          </div>
+          
+          {/* Mobile hint - shown only on mobile when not swiped */}
+          {swipeX === 0 && (
+            <div className="sm:hidden text-xs text-gray-400 text-right">
+              <p>Hold to edit</p>
+              <p>Swipe to delete</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }

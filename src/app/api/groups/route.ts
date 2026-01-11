@@ -23,7 +23,8 @@ export async function GET() {
     const controller = new AbortController();
     const t = setTimeout(() => controller.abort(), 9500);
     const groups = await prisma.group.findMany({
-      include: { guests: { orderBy: [{ lastName: "asc" }, { firstName: "asc" }] } },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      include: { guests: { orderBy: { sortOrder: "asc" } } } as any,
       orderBy: [{ createdAt: "desc" }],
     });
     clearTimeout(t);

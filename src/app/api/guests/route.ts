@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "../../../lib/prisma";
 import { sendEmail } from "../../../lib/email";
+import { getMealDescription, KIDS_MEAL } from "../../../lib/config";
 
 // GET /api/guests - list all guests with group
 export async function GET() {
@@ -16,7 +17,7 @@ export async function GET() {
   }
 }
 
-const KIDS_MEAL_VALUE = "Kids Meal";
+const KIDS_MEAL_VALUE = KIDS_MEAL.value;
 
 // POST /api/guests - create a new guest (email/phone now on group)
 export async function POST(req: Request) {
@@ -230,22 +231,16 @@ export async function PATCH(req: Request) {
                     : othersNotAttending[0];
                   message += `<p style="color: #6b7280; font-size: 14px;">We also understand that ${othersFormatted} won't be able to make it.</p>`;
                 }
+                
+                // Registry mention for those who can't attend
+                message += `<div style="background: #fdf2f8; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ec4899;">`;
+                message += `<p style="color: #831843; font-size: 14px; margin: 0;">While we'll miss celebrating with you in person, please know that your warm wishes mean the world to us. If you'd like, you're welcome to view our registry at <a href="https://www.zola.com/registry/ryanandmarsha2026" style="color: #be185d; text-decoration: underline;">zola.com/registry/ryanandmarsha2026</a> — but truly, just knowing you're thinking of us is gift enough.</p>`;
+                message += `</div>`;
               }
             }
             
             // Meal selections (only if someone is attending)
             if (yesGuests.length > 0) {
-              // Helper function to get full meal description
-              const getMealDescription = (selection: string | null) => {
-                switch (selection) {
-                  case 'Chicken': return 'Herb Crusted Chicken w/ Boursin Cheese Sauce';
-                  case 'Beef': return 'Grilled NY Strip Steak w/ Wild Mushrooms & Bourbon Glaze';
-                  case 'Vegetarian': return 'Vegan/Vegetarian';
-                  case 'Kids Meal': return 'Kids Meal';
-                  default: return selection || 'Not selected';
-                }
-              };
-              
               message += `<div style="background: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0;">`;
               message += `<p style="color: #1f2937; font-weight: bold; margin-bottom: 10px;">Meal Selections:</p>`;
               yesGuests.forEach(g => {

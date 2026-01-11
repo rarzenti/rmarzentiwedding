@@ -87,9 +87,10 @@ export async function GET(req: Request) {
     let guests;
     const include = {
       group: {
-        include: { guests: true },
+        include: { guests: { orderBy: { sortOrder: "asc" } } },
       },
-    } as const;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any;
 
     if (tokens.length >= 2) {
       // Use first and last piece; support reversed order and nickname aliases for first name
@@ -151,7 +152,8 @@ export async function GET(req: Request) {
     };
     const byKey = new Map<string, { id: string; name: string | null; guests: RSVPGuest[] }>();
 
-    for (const g of guests) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    for (const g of guests as any[]) {
       if (g.group) {
         const key = g.group.id;
         if (!byKey.has(key)) {

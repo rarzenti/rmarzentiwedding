@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { MEAL_OPTIONS, KIDS_MEAL, getMealInfo } from "@/lib/config";
 
 // Feature flag - set to true to enable RSVP functionality after New Year
 const RSVP_ENABLED = true;
@@ -85,6 +86,12 @@ export default function RSVPPage() {
 
   const updateLocal = (guestId: string, patch: Partial<RsvpGuest>) => {
     if (!selected) return;
+    
+    // If setting RSVP to NO, clear meal selection and dietary restrictions
+    if (patch.rsvpStatus === 'NO') {
+      patch = { ...patch, foodSelection: null, dietaryRestrictions: null };
+    }
+    
     setSelected({
       ...selected,
       guests: selected.guests.map((m) => (m.id === guestId ? { ...m, ...patch } : m)),
@@ -265,7 +272,7 @@ export default function RSVPPage() {
                         <label className="block font-cormorant text-sm tracking-wide mb-2 text-gray-900 font-medium">Dinner selection</label>
                         {selected.guests[currentGuestIdx].isChild ? (
                           <div className="w-full rounded-xl border-2 border-gray-300 px-4 py-3 bg-gray-50 text-gray-900 font-medium">
-                            Kids Meal — Crisp Herb-Encrusted Chicken Fillets with Golden Pommes Frites and a Savory Tomato Reduction (chicken tenders and fries)
+                            {KIDS_MEAL.emoji} {KIDS_MEAL.label} — {KIDS_MEAL.description}
                           </div>
                         ) : selected.guests[currentGuestIdx].rsvpStatus === 'NO' ? (
                           <div className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 bg-gray-100 text-gray-500 italic">
@@ -285,9 +292,10 @@ export default function RSVPPage() {
                               <div className="flex items-center justify-between">
                                 <div>
                                   <p className="text-gray-900 font-medium">
-                                    {selected.guests[currentGuestIdx].foodSelection === 'Chicken' && '🐔 Herb Crusted Chicken'}
-                                    {selected.guests[currentGuestIdx].foodSelection === 'Beef' && '🥩 Grilled NY Strip Steak'}
-                                    {selected.guests[currentGuestIdx].foodSelection === 'Vegetarian' && '🥗 Vegan/Vegetarian'}
+                                    {(() => {
+                                      const meal = getMealInfo(selected.guests[currentGuestIdx].foodSelection);
+                                      return meal ? `${meal.emoji} ${meal.label}` : selected.guests[currentGuestIdx].foodSelection;
+                                    })()}
                                   </p>
                                   <p className="text-xs text-gray-500 mt-0.5">Tap to change selection</p>
                                 </div>
@@ -308,8 +316,9 @@ export default function RSVPPage() {
                       <textarea
                         value={selected.guests[currentGuestIdx].dietaryRestrictions ?? ""}
                         onChange={(e) => updateLocal(selected.guests[currentGuestIdx].id, { dietaryRestrictions: e.target.value })}
-                        placeholder="Allergies or dietary needs (e.g., gluten-free, nut allergy)"
-                        className="form-textarea"
+                        placeholder={selected.guests[currentGuestIdx].rsvpStatus === 'NO' ? "Guest not attending" : "Allergies or dietary needs (e.g., gluten-free, nut allergy)"}
+                        className={`form-textarea ${selected.guests[currentGuestIdx].rsvpStatus === 'NO' ? 'bg-gray-100 !text-gray-500 cursor-not-allowed' : ''}`}
+                        disabled={selected.guests[currentGuestIdx].rsvpStatus === 'NO'}
                       />
                     </div>
                     <div className="mt-6 flex justify-between">
@@ -410,91 +419,41 @@ export default function RSVPPage() {
                   
                   {/* Menu Options */}
                   <div className="p-6 space-y-4">
-                    {/* Chicken - Recommended */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        updateLocal(selected.guests[currentGuestIdx].id, { foodSelection: 'Chicken' });
-                        setShowMealModal(false);
-                      }}
-                      className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
-                        selected.guests[currentGuestIdx].foodSelection === 'Chicken'
-                          ? 'border-emerald-500 bg-emerald-50 ring-2 ring-emerald-200'
-                          : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
-                      }`}
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-2xl">🐔</span>
-                            <span className="font-playfair text-lg text-gray-900">Herb Crusted Chicken</span>
+                    {MEAL_OPTIONS.map(meal => (
+                      <button
+                        key={meal.value}
+                        type="button"
+                        onClick={() => {
+                          updateLocal(selected.guests[currentGuestIdx].id, { foodSelection: meal.value });
+                          setShowMealModal(false);
+                        }}
+                        className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
+                          selected.guests[currentGuestIdx].foodSelection === meal.value
+                            ? 'border-emerald-500 bg-emerald-50 ring-2 ring-emerald-200'
+                            : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-2xl">{meal.emoji}</span>
+                              <span className="font-playfair text-lg text-gray-900">{meal.label}</span>
+                            </div>
+                            <p className="text-gray-600 text-sm ml-9">{meal.description}</p>
+                            {meal.recommended && (
+                              <div className="ml-9 mt-2">
+                                <span className="inline-flex items-center gap-1 text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded-full font-medium">
+                                  ⭐ Ryan &amp; Marsha Recommend
+                                </span>
+                              </div>
+                            )}
                           </div>
-                          <p className="text-gray-600 text-sm ml-9">with Boursin Cheese Sauce</p>
-                          <div className="ml-9 mt-2">
-                            <span className="inline-flex items-center gap-1 text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded-full font-medium">
-                              ⭐ Ryan &amp; Marsha Recommend
-                            </span>
-                          </div>
+                          {selected.guests[currentGuestIdx].foodSelection === meal.value && (
+                            <span className="text-emerald-600 text-xl">✓</span>
+                          )}
                         </div>
-                        {selected.guests[currentGuestIdx].foodSelection === 'Chicken' && (
-                          <span className="text-emerald-600 text-xl">✓</span>
-                        )}
-                      </div>
-                    </button>
-
-                    {/* Beef */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        updateLocal(selected.guests[currentGuestIdx].id, { foodSelection: 'Beef' });
-                        setShowMealModal(false);
-                      }}
-                      className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
-                        selected.guests[currentGuestIdx].foodSelection === 'Beef'
-                          ? 'border-emerald-500 bg-emerald-50 ring-2 ring-emerald-200'
-                          : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
-                      }`}
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-2xl">🥩</span>
-                            <span className="font-playfair text-lg text-gray-900">Grilled NY Strip Steak</span>
-                          </div>
-                          <p className="text-gray-600 text-sm ml-9">with Wild Mushrooms &amp; Bourbon Glaze</p>
-                        </div>
-                        {selected.guests[currentGuestIdx].foodSelection === 'Beef' && (
-                          <span className="text-emerald-600 text-xl">✓</span>
-                        )}
-                      </div>
-                    </button>
-
-                    {/* Vegetarian */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        updateLocal(selected.guests[currentGuestIdx].id, { foodSelection: 'Vegetarian' });
-                        setShowMealModal(false);
-                      }}
-                      className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
-                        selected.guests[currentGuestIdx].foodSelection === 'Vegetarian'
-                          ? 'border-emerald-500 bg-emerald-50 ring-2 ring-emerald-200'
-                          : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
-                      }`}
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-2xl">🥗</span>
-                            <span className="font-playfair text-lg text-gray-900">Vegan / Vegetarian</span>
-                          </div>
-                          <p className="text-gray-600 text-sm ml-9">Please specify your request in dietary restrictions</p>
-                        </div>
-                        {selected.guests[currentGuestIdx].foodSelection === 'Vegetarian' && (
-                          <span className="text-emerald-600 text-xl">✓</span>
-                        )}
-                      </div>
-                    </button>
+                      </button>
+                    ))}
                   </div>
 
                   {/* Footer */}

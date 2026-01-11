@@ -126,9 +126,9 @@ button {
 }
 
 .admin-input-sm {
-  @apply px-2 py-1 border-2 border-gray-400 rounded-md bg-white placeholder-gray-500 font-medium;
+  @apply px-2 py-1.5 border-2 border-gray-400 rounded-md bg-white placeholder-gray-500 font-medium;
   @apply focus:ring-2 focus:ring-blue-500 focus:border-blue-600 shadow-sm transition-all;
-  @apply text-sm;
+  @apply text-sm h-9;
   color: #111827 !important;
 }
 
