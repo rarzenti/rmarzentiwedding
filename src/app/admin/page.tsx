@@ -346,7 +346,13 @@ export default function AdminDashboard() {
     }
     
     // Sort alphabetically by first guest's last name, then first name
+    // But keep expanded (being edited) groups in their current position
+    const expandedIds = new Set(Object.keys(expanded).filter(id => expanded[id]));
+    
     filtered = [...filtered].sort((a, b) => {
+      // If either group is expanded, don't change their relative order
+      if (expandedIds.has(a.id) || expandedIds.has(b.id)) return 0;
+      
       const aGuest = a.guests[0];
       const bGuest = b.guests[0];
       
@@ -364,7 +370,7 @@ export default function AdminDashboard() {
     });
     
     return filtered;
-  }, [groups, view, guestOfFilter, searchFilter]);
+  }, [groups, view, guestOfFilter, searchFilter, expanded]);
 
   return (
     <main className="mx-auto w-full px-2 sm:px-4 md:w-[85%] lg:w-[75%] max-w-none md:p-6">
@@ -1207,92 +1213,144 @@ function GroupCard({
   children?: React.ReactNode;
 }) {
   const [swipeX, setSwipeX] = useState(0);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isHolding, setIsHolding] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
+  const hapticTimer = useRef<NodeJS.Timeout | null>(null);
   const isLongPress = useRef(false);
+  const isSwiping = useRef(false);
+
+  // Click outside to close expanded/swiped state
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
+      if (cardRef.current && !cardRef.current.contains(e.target as Node)) {
+        if (expanded) {
+          onToggleExpand();
+        }
+        if (swipeX !== 0) {
+          setSwipeX(0);
+        }
+      }
+    };
+
+    if (expanded || swipeX !== 0) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+        document.removeEventListener('touchstart', handleClickOutside);
+      };
+    }
+  }, [expanded, swipeX, onToggleExpand]);
+
+  const clearTimers = useCallback(() => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+    if (hapticTimer.current) {
+      clearTimeout(hapticTimer.current);
+      hapticTimer.current = null;
+    }
+    setIsHolding(false);
+  }, []);
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
     touchStartY.current = e.touches[0].clientY;
     isLongPress.current = false;
+    isSwiping.current = false;
     
-    // Start long press timer
+    // At 500ms, show visual feedback (slight scale + vibrate)
+    hapticTimer.current = setTimeout(() => {
+      setIsHolding(true);
+      if (navigator.vibrate) navigator.vibrate(30);
+    }, 500);
+    
+    // At 1000ms, actually trigger edit mode
     longPressTimer.current = setTimeout(() => {
       isLongPress.current = true;
-      // Vibrate if supported
+      setIsHolding(false);
       if (navigator.vibrate) navigator.vibrate(50);
       onToggleExpand();
-    }, 500);
+    }, 1000);
   }, [onToggleExpand]);
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
     const deltaX = e.touches[0].clientX - touchStartX.current;
     const deltaY = e.touches[0].clientY - touchStartY.current;
     
-    // Cancel long press if moving
+    // Cancel long press if moving significantly
     if (Math.abs(deltaX) > 10 || Math.abs(deltaY) > 10) {
-      if (longPressTimer.current) {
-        clearTimeout(longPressTimer.current);
-        longPressTimer.current = null;
+      clearTimers();
+      
+      // Mark as swiping if horizontal movement
+      if (Math.abs(deltaX) > Math.abs(deltaY)) {
+        isSwiping.current = true;
       }
     }
     
     // Only allow left swipe (negative deltaX) and limit movement
     if (deltaX < 0 && Math.abs(deltaY) < 30) {
-      setSwipeX(Math.max(deltaX, -100));
+      setSwipeX(Math.max(deltaX, -120));
     }
-  }, []);
+  }, [clearTimers]);
 
   const handleTouchEnd = useCallback(() => {
-    // Clear long press timer
-    if (longPressTimer.current) {
-      clearTimeout(longPressTimer.current);
-      longPressTimer.current = null;
-    }
+    clearTimers();
     
-    // If swiped far enough, show delete confirm
+    // If swiped far enough, lock into delete position
     if (swipeX < -60) {
-      setShowDeleteConfirm(true);
-      setSwipeX(-80);
+      setSwipeX(-100);
     } else {
       setSwipeX(0);
-      setShowDeleteConfirm(false);
     }
-  }, [swipeX]);
+  }, [swipeX, clearTimers]);
 
   const handleDeleteClick = () => {
     if (confirm("Delete this group and all its guests?")) {
       onDelete();
     }
     setSwipeX(0);
-    setShowDeleteConfirm(false);
   };
 
-  const resetSwipe = () => {
-    setSwipeX(0);
-    setShowDeleteConfirm(false);
-  };
+  // Handle tap on card (when not swiping) - toggle expand
+  const handleCardClick = useCallback(() => {
+    // If swiped, reset instead
+    if (swipeX !== 0) {
+      setSwipeX(0);
+      return;
+    }
+    // Don't trigger if we just did a long press
+    if (isLongPress.current) {
+      isLongPress.current = false;
+      return;
+    }
+  }, [swipeX]);
 
   return (
-    <div className="relative overflow-hidden rounded-lg">
+    <div ref={cardRef} className="relative overflow-hidden rounded-lg">
       {/* Delete button revealed by swipe (mobile) */}
       <div 
-        className="absolute inset-y-0 right-0 w-20 bg-red-500 flex items-center justify-center sm:hidden"
+        className="absolute inset-y-0 right-0 w-24 bg-red-500 flex items-center justify-center sm:hidden cursor-pointer active:bg-red-600"
         onClick={handleDeleteClick}
       >
-        <TrashIcon className="h-6 w-6 text-white" />
+        <TrashIcon className="h-7 w-7 text-white" />
       </div>
       
       {/* Main card content */}
       <div 
-        className="border rounded bg-white p-4 relative"
-        style={{ transform: `translateX(${swipeX}px)`, transition: swipeX === 0 ? 'transform 0.2s' : 'none' }}
+        className={`border rounded bg-white p-4 relative transition-transform ${isHolding ? 'scale-[1.02] shadow-lg' : ''}`}
+        style={{ 
+          transform: `translateX(${swipeX}px)${isHolding ? ' scale(1.02)' : ''}`, 
+          transition: swipeX === 0 && !isHolding ? 'transform 0.3s ease-out, box-shadow 0.2s' : 'box-shadow 0.2s'
+        }}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-        onClick={() => { if (swipeX !== 0) resetSwipe(); }}
+        onClick={handleCardClick}
       >
         <div className="flex items-start justify-between">
           <div className="flex-1 mr-3">
@@ -1330,14 +1388,12 @@ function GroupCard({
               <PencilIcon className="h-4 w-4" />
             </button>
             <button 
-              onClick={(e) => { e.stopPropagation(); onDelete(); }} 
+              onClick={(e) => { e.stopPropagation(); if (confirm("Delete this group and all its guests?")) onDelete(); }} 
               className="p-2 rounded border border-red-600 text-red-600 hover:bg-red-600 hover:text-white transition-colors"
             >
               <TrashIcon className="h-4 w-4" />
             </button>
           </div>
-          
-
         </div>
 
         {/* Guest names preview spanning full card width - first names only */}
