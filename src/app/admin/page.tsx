@@ -310,8 +310,25 @@ export default function AdminDashboard() {
     }
   };
 
+  // Sort groups alphabetically - this is the stable sorted order
+  const sortedGroups = useMemo(() => {
+    return [...groups].sort((a, b) => {
+      const aGuest = a.guests[0];
+      const bGuest = b.guests[0];
+      
+      if (!aGuest && !bGuest) return 0;
+      if (!aGuest) return 1;
+      if (!bGuest) return -1;
+      
+      const lastNameCompare = (aGuest.lastName || '').localeCompare(bGuest.lastName || '');
+      if (lastNameCompare !== 0) return lastNameCompare;
+      
+      return (aGuest.firstName || '').localeCompare(bGuest.firstName || '');
+    });
+  }, [groups]);
+
   const filteredGroups = useMemo(() => {
-    let filtered = groups;
+    let filtered = sortedGroups;
     
     // Apply guest filter for both views
     if (guestOfFilter !== 'ALL') {
@@ -345,32 +362,8 @@ export default function AdminDashboard() {
       }
     }
     
-    // Sort alphabetically by first guest's last name, then first name
-    // But keep expanded (being edited) groups in their current position
-    const expandedIds = new Set(Object.keys(expanded).filter(id => expanded[id]));
-    
-    filtered = [...filtered].sort((a, b) => {
-      // If either group is expanded, don't change their relative order
-      if (expandedIds.has(a.id) || expandedIds.has(b.id)) return 0;
-      
-      const aGuest = a.guests[0];
-      const bGuest = b.guests[0];
-      
-      // Handle groups with no guests
-      if (!aGuest && !bGuest) return 0;
-      if (!aGuest) return 1;
-      if (!bGuest) return -1;
-      
-      // Compare by last name first
-      const lastNameCompare = (aGuest.lastName || '').localeCompare(bGuest.lastName || '');
-      if (lastNameCompare !== 0) return lastNameCompare;
-      
-      // Then by first name
-      return (aGuest.firstName || '').localeCompare(bGuest.firstName || '');
-    });
-    
     return filtered;
-  }, [groups, view, guestOfFilter, searchFilter, expanded]);
+  }, [sortedGroups, view, guestOfFilter, searchFilter]);
 
   return (
     <main className="mx-auto w-full px-2 sm:px-4 md:w-[85%] lg:w-[75%] max-w-none md:p-6">
@@ -1212,123 +1205,122 @@ function GroupCard({
   onSaveName: () => void;
   children?: React.ReactNode;
 }) {
-  const [revealAmount, setRevealAmount] = useState(0); // 0 to 1, how much actions are revealed
+  const [translateX, setTranslateX] = useState(0);
+  const [isOpen, setIsOpen] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
-  const touchStartX = useRef(0);
-  const touchStartY = useRef(0);
-  const currentReveal = useRef(0);
-  const isDragging = useRef(false);
+  const startX = useRef(0);
+  const startY = useRef(0);
+  const currentX = useRef(0);
+  const swiping = useRef(false);
 
-  const ACTION_WIDTH = 120; // Total width of action buttons
+  const ACTION_WIDTH = 120;
 
-  // Click outside to close expanded/swiped state
+  // Click outside to close
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
+    if (!isOpen && !expanded) return;
+    
+    const handleOutside = (e: Event) => {
       if (cardRef.current && !cardRef.current.contains(e.target as Node)) {
-        if (expanded) {
-          onToggleExpand();
-        }
-        if (revealAmount > 0) {
-          setRevealAmount(0);
+        if (expanded) onToggleExpand();
+        if (isOpen) {
+          setIsOpen(false);
+          setTranslateX(0);
         }
       }
     };
 
-    if (expanded || revealAmount > 0) {
-      document.addEventListener('mousedown', handleClickOutside);
-      document.addEventListener('touchstart', handleClickOutside);
-      return () => {
-        document.removeEventListener('mousedown', handleClickOutside);
-        document.removeEventListener('touchstart', handleClickOutside);
-      };
+    document.addEventListener('touchstart', handleOutside, true);
+    document.addEventListener('mousedown', handleOutside, true);
+    return () => {
+      document.removeEventListener('touchstart', handleOutside, true);
+      document.removeEventListener('mousedown', handleOutside, true);
+    };
+  }, [isOpen, expanded, onToggleExpand]);
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    startX.current = e.touches[0].clientX;
+    startY.current = e.touches[0].clientY;
+    currentX.current = isOpen ? -ACTION_WIDTH : 0;
+    swiping.current = false;
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    const dx = e.touches[0].clientX - startX.current;
+    const dy = e.touches[0].clientY - startY.current;
+
+    // Determine direction on first significant move
+    if (!swiping.current && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) {
+      swiping.current = Math.abs(dx) > Math.abs(dy);
     }
-  }, [expanded, revealAmount, onToggleExpand]);
 
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX;
-    touchStartY.current = e.touches[0].clientY;
-    currentReveal.current = revealAmount;
-    isDragging.current = false;
-  }, [revealAmount]);
+    if (swiping.current) {
+      e.preventDefault();
+      const newX = Math.min(0, Math.max(-ACTION_WIDTH, currentX.current + dx));
+      setTranslateX(newX);
+    }
+  };
 
-  const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    const deltaX = e.touches[0].clientX - touchStartX.current;
-    const deltaY = e.touches[0].clientY - touchStartY.current;
+  const onTouchEnd = () => {
+    if (!swiping.current) return;
     
-    // Only handle horizontal swipes
-    if (!isDragging.current && Math.abs(deltaX) > 10 && Math.abs(deltaX) > Math.abs(deltaY)) {
-      isDragging.current = true;
-    }
-    
-    if (isDragging.current) {
-      // Convert pixel delta to reveal amount (0-1)
-      // Negative deltaX = swipe left = reveal actions
-      // Positive deltaX = swipe right = hide actions
-      const newReveal = currentReveal.current - (deltaX / ACTION_WIDTH);
-      setRevealAmount(Math.max(0, Math.min(1, newReveal)));
-    }
-  }, []);
-
-  const handleTouchEnd = useCallback(() => {
-    // Snap to fully open or closed
-    if (revealAmount > 0.3) {
-      setRevealAmount(1);
+    // Snap open or closed based on position
+    if (translateX < -ACTION_WIDTH / 2) {
+      setTranslateX(-ACTION_WIDTH);
+      setIsOpen(true);
     } else {
-      setRevealAmount(0);
+      setTranslateX(0);
+      setIsOpen(false);
     }
-    isDragging.current = false;
-  }, [revealAmount]);
+    swiping.current = false;
+  };
 
-  const handleEditClick = () => {
-    setRevealAmount(0);
+  const handleEdit = () => {
+    setTranslateX(0);
+    setIsOpen(false);
     onToggleExpand();
   };
 
-  const handleDeleteClick = () => {
+  const handleDelete = () => {
     if (confirm("Delete this group and all its guests?")) {
       onDelete();
     }
-    setRevealAmount(0);
+    setTranslateX(0);
+    setIsOpen(false);
   };
 
-  // Calculate the actual pixel offset for the action buttons
-  const actionOffset = revealAmount * ACTION_WIDTH;
-
   return (
-    <div ref={cardRef} className="relative overflow-hidden rounded-lg">
-      {/* Action buttons that slide in from the right (mobile only) */}
-      <div 
-        className="absolute inset-y-0 right-0 flex sm:hidden"
-        style={{ 
-          transform: `translateX(${ACTION_WIDTH - actionOffset}px)`,
-          transition: isDragging.current ? 'none' : 'transform 0.3s ease-out'
-        }}
-      >
-        {/* Edit button */}
+    <div ref={cardRef} className="relative rounded-lg overflow-hidden">
+      {/* Action buttons - fixed behind the card (mobile only) */}
+      <div className="absolute inset-y-0 right-0 flex sm:hidden" style={{ width: ACTION_WIDTH }}>
         <button
-          onClick={handleEditClick}
-          className="w-[60px] bg-blue-500 flex items-center justify-center active:bg-blue-600"
+          onClick={handleEdit}
+          className="flex-1 bg-blue-500 flex items-center justify-center active:bg-blue-600"
+          style={{ width: 60 }}
         >
           <PencilIcon className="h-6 w-6 text-white" />
         </button>
-        {/* Delete button */}
         <button
-          onClick={handleDeleteClick}
-          className="w-[60px] bg-red-500 flex items-center justify-center active:bg-red-600"
+          onClick={handleDelete}
+          className="flex-1 bg-red-500 flex items-center justify-center active:bg-red-600"
+          style={{ width: 60 }}
         >
           <TrashIcon className="h-6 w-6 text-white" />
         </button>
       </div>
       
-      {/* Main card content - stays in place, buttons overlay from right */}
+      {/* Sliding card content */}
       <div 
         className="border rounded bg-white p-4 relative"
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
+        style={{ 
+          transform: `translateX(${translateX}px)`,
+          transition: swiping.current ? 'none' : 'transform 0.25s ease-out'
+        }}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
       >
         <div className="flex items-start justify-between">
-          <div className="flex-1 mr-3" style={{ marginRight: revealAmount > 0 ? `${actionOffset + 12}px` : undefined }}>
+          <div className="flex-1 mr-3">
             {expanded ? (
               <div className="flex items-center gap-2">
                 <input
@@ -1354,7 +1346,7 @@ function GroupCard({
             <p className="text-sm text-gray-600">{group.guests.length} guest{group.guests.length === 1 ? "" : "s"}</p>
           </div>
           
-          {/* Desktop buttons - hidden on mobile */}
+          {/* Desktop buttons */}
           <div className="hidden sm:flex items-center gap-2">
             <button
               onClick={(e) => { e.stopPropagation(); onToggleExpand(); }}
@@ -1371,7 +1363,7 @@ function GroupCard({
           </div>
         </div>
 
-        {/* Guest names preview spanning full card width - first names only */}
+        {/* Guest names preview */}
         {group.guests.length > 0 && !expanded && (
           <p className="mt-2 text-sm text-gray-700 break-words">
             {group.guests.map((m) => m.firstName).join(", ")}

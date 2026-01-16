@@ -191,7 +191,7 @@ function MealsPageInner() {
                 <select
                   value={selectedTable}
                   onChange={e=>setSelectedTable(e.target.value)}
-                  className={`border-2 rounded-lg px-4 py-2 font-cormorant text-base tracking-wide bg-white/90 backdrop-blur-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-600 transition ${selectedTable!=="ALL"?"border-emerald-600 text-emerald-900" : "border-emerald-400 text-emerald-800"}`}
+                  className={`border-2 rounded-lg px-4 py-2 font-cormorant text-base tracking-wide bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-600 transition ${selectedTable!=="ALL"?"border-emerald-600 text-gray-900" : "border-emerald-400 text-gray-900"}`}
                 >
                   <option value="ALL">All Tables (21)</option>
                   <option value="UNASSIGNED">Unassigned</option>
