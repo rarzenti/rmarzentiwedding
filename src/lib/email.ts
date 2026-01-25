@@ -14,7 +14,7 @@ export async function sendEmail({ to, subject, html }: SendEmailOptions) {
     throw new Error('Missing RESEND_API_KEY environment variable');
   }
   
-  const fromAddress = process.env.RESEND_FROM || 'Ryan & Marsha <noreply@resend.dev>';
+  const fromAddress = process.env.RESEND_FROM || 'Ryan & Marsha <noreply@rmarzentiwedding.com>';
   
   console.log(`Sending email to: ${to}, subject: ${subject}, from: ${fromAddress}`);
   
