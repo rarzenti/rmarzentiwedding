@@ -98,6 +98,23 @@ export default function DetailsPage() {
         </div>
       </div>
 
+      {/* Attire */}
+      <div className="mb-20">
+        <div className="bg-gradient-to-br from-purple-50 to-white p-10 rounded-2xl shadow-lg border border-purple-100">
+          <div className="text-center mb-8">
+            <h2 className="font-playfair text-4xl font-light text-gray-800 mb-4 tracking-wide">Attire</h2>
+            <div className="w-20 h-0.5 bg-gradient-to-r from-transparent via-purple-400 to-transparent mx-auto"></div>
+          </div>
+          <div className="text-center space-y-4">
+            <p className="font-playfair text-2xl font-light text-gray-900 tracking-wide">Bright Semi-Formal or Cocktail Attire Preferred</p>
+            <p className="text-gray-700 font-light leading-relaxed max-w-2xl mx-auto">
+              We invite you to dress in bright, vibrant colors that reflect the joy of the celebration! 
+              Semi-formal or cocktail attire works beautifully for this occasion.
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* After Party */}
       <div className="mb-20">
         <div className="bg-gradient-to-br from-green-50 to-white p-10 rounded-2xl shadow-lg border border-green-100">
@@ -107,9 +124,9 @@ export default function DetailsPage() {
           </div>
           <div className="text-center space-y-4">
             <h3 className="font-playfair text-2xl font-light text-gray-900 tracking-wide">Jackson&apos;s Restaurant & Bar</h3>
-            <p className="text-gray-700 font-light leading-relaxed">1000 Corporate Drive, Canonsburg, Pennsylvania 15317<br /><span className="italic text-sm">(Next to the Hilton)</span></p>
+            <p className="text-gray-700 font-light leading-relaxed">1100 Corporate Drive, Canonsburg, Pennsylvania 15317<br /><span className="italic text-sm">(Next door to the reception)</span></p>
             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 inline-block">
-              <p className="font-playfair text-2xl sm:text-3xl font-light text-gray-900 mb-2 whitespace-nowrap">10:00 PM - 1:30 AM</p>
+              <p className="font-playfair text-2xl sm:text-3xl font-light text-gray-900 mb-2 whitespace-nowrap">10:30 PM - 1:30 AM</p>
               <p className="text-gray-600 font-light italic">Keep the celebration going!<br />Join us for drinks and more fun right next door.</p>
             </div>
           </div>
@@ -303,12 +320,10 @@ export default function DetailsPage() {
           <div className="w-12 h-0.5 bg-gradient-to-r from-transparent via-gray-400 to-transparent mx-auto mb-4"></div>
         </div>
         <p className="text-gray-600 font-light mb-4">
-          We&apos;re here to help with any accommodation questions
+          We&apos;re here to help with any accommodation questions.
         </p>
         <p className="text-gray-500 font-light italic">
           Ryan & Marsha&apos;s email: rmarzentiwedding@gmail.com
-          <br />
-          or call hotel directly at: (724) 743-5000
         </p>
       </div>
     </main>

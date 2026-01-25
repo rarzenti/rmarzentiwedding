@@ -111,7 +111,7 @@ export default function AccommodationsPage() {
           <div className="w-12 h-0.5 bg-gradient-to-r from-transparent via-gray-400 to-transparent mx-auto mb-4"></div>
         </div>
         <p className="text-gray-600 font-light mb-4">
-          We&apos;re here to help with any accommodation questions
+          We&apos;re here to help with any accommodation questions.
         </p>
         <p className="text-gray-500 font-light italic">
           Ryan & Marsha&apos;s Email: rmarzentiwedding@gmail.com
