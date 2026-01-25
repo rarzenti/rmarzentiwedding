@@ -63,7 +63,7 @@ export default function DetailsPage() {
             <div className="w-20 h-0.5 bg-gradient-to-r from-transparent via-gray-400 to-transparent mx-auto"></div>
           </div>
           <div className="text-center space-y-4">
-            <h3 className="font-playfair text-2xl font-light text-gray-900 tracking-wide">St. Padre Pio Parish</h3>
+            <h3 className="font-playfair text-2xl font-light text-gray-900 tracking-wide">St. Augustine Church<br />(St. Padre Pio Parish)</h3>
             <p className="text-gray-700 font-light leading-relaxed">225 37th Street<br />Pittsburgh, Pennsylvania 15201</p>
             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 inline-block">
               <p className="font-playfair text-3xl font-light text-gray-900 mb-2">2:00 PM</p>
@@ -256,7 +256,7 @@ export default function DetailsPage() {
               <div className="mb-4">
                 <h4 className="font-playfair text-lg font-light text-gray-800 tracking-wide">Ceremony Venue</h4>
               </div>
-              <p className="text-gray-700 font-light mb-1">St. Padre Pio Parish</p>
+              <p className="text-gray-700 font-light mb-1">St. Augustine Church (St. Padre Pio Parish)</p>
               <p className="text-gray-600 font-light text-sm mb-4">225 37th Street, Pittsburgh, Pennsylvania 15201</p>
               <a 
                 href="https://www.google.com/maps/search/?api=1&query=225+37th+St,+Pittsburgh,+PA+15201" 

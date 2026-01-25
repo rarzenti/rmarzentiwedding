@@ -9,13 +9,13 @@ import {
   ArrowLeftIcon
 } from "@heroicons/react/24/outline";
 import * as XLSX from "xlsx";
+import { MEAL_OPTIONS, KIDS_MEAL } from "@/lib/config";
 
 interface Guest {
   id: string;
   title?: string | null;
   firstName: string;
   lastName: string;
-  email?: string | null;
   rsvpStatus: "PENDING" | "YES" | "NO";
   foodSelection?: string | null;
   dietaryRestrictions?: string | null;
@@ -24,6 +24,7 @@ interface Guest {
   group?: {
     id: string;
     name?: string | null;
+    email?: string | null;
   } | null;
 }
 
@@ -82,7 +83,7 @@ export default function GuestDataPage() {
   const filteredGuests = guests.filter(guest => {
     const guestName = `${guest.title ? guest.title + ' ' : ''}${guest.firstName} ${guest.lastName}`.toLowerCase();
     const groupName = (guest.group?.name || "No Group").toLowerCase();
-    const email = (guest.email || "No email").toLowerCase();
+    const email = (guest.group?.email || "No email").toLowerCase();
     const status = guest.rsvpStatus;
     const food = guest.foodSelection || "Not selected";
     const dietary = (guest.dietaryRestrictions || "").toLowerCase();
@@ -124,7 +125,7 @@ export default function GuestDataPage() {
     const data = filteredGuests.map(g => ({
       Guest: `${g.title ? g.title + ' ' : ''}${g.firstName} ${g.lastName}`,
       Group: g.group?.name || "No Group",
-      Email: g.email || "No email",
+      Email: g.group?.email || "No email",
       Status: g.rsvpStatus,
       "Food Selection": g.foodSelection || "Not selected",
       "Dietary Restrictions": g.dietaryRestrictions || "None",
@@ -279,21 +280,6 @@ export default function GuestDataPage() {
               </th>
               <th className="px-6 py-2">
                 <div className="flex flex-col">
-                  <span className="font-semibold font-cormorant text-emerald-900">Status</span>
-                  <select
-                    value={statusFilter}
-                    onChange={e => setStatusFilter(e.target.value)}
-                    className="mt-1 px-2 py-1 border border-emerald-400 rounded-md text-xs font-cormorant text-emerald-900 bg-white/90 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-600 shadow-sm transition"
-                  >
-                    <option value="ALL">All</option>
-                    <option value="YES">Confirmed</option>
-                    <option value="NO">Declined</option>
-                    <option value="PENDING">Pending</option>
-                  </select>
-                </div>
-              </th>
-                            <th className="px-6 py-2">
-                <div className="flex flex-col">
                   <span className="font-semibold font-cormorant text-gray-900">RSVP Status</span>
                   <select
                     value={statusFilter}
@@ -310,13 +296,18 @@ export default function GuestDataPage() {
               <th className="px-6 py-2">
                 <div className="flex flex-col">
                   <span className="font-semibold font-cormorant text-gray-900">Food Selection</span>
-                  <input
-                    type="text"
+                  <select
                     value={foodFilter}
                     onChange={e => setFoodFilter(e.target.value)}
-                    placeholder="Filter..."
-                    className="mt-1 admin-input-sm"
-                  />
+                    className="mt-1 px-2 py-1 border border-gray-300 rounded-md text-xs font-cormorant text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-600 shadow-sm transition"
+                  >
+                    <option value="ALL">All</option>
+                    <option value="Not selected">Not selected</option>
+                    {MEAL_OPTIONS.map(meal => (
+                      <option key={meal.value} value={meal.value}>{meal.label}</option>
+                    ))}
+                    <option value={KIDS_MEAL.value}>{KIDS_MEAL.label}</option>
+                  </select>
                 </div>
               </th>
               <th className="px-6 py-2">
@@ -390,7 +381,7 @@ export default function GuestDataPage() {
                   </td>
                   <td className="px-6 py-4">
                     <div className="font-cormorant text-gray-700 text-sm">
-                      {guest.email || "No email"}
+                      {guest.group?.email || "No email"}
                     </div>
                   </td>
                   <td className="px-6 py-4">

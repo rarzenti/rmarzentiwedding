@@ -175,3 +175,59 @@ button {
   color: #6b7280 !important;
   opacity: 1;
 }
+
+/* ============================================
+   HIGH CONTRAST PAGE TITLES
+   ============================================ */
+.page-title {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: #000000 !important;
+  letter-spacing: 0.015em;
+  margin-bottom: 1rem;
+}
+
+/* ============================================
+   HIGH CONTRAST SELECT DROPDOWNS
+   ============================================ */
+.select-high-contrast {
+  width: 100%;
+  padding: 0.625rem 1rem;
+  border: 2px solid #374151;
+  border-radius: 0.5rem;
+  background-color: #ffffff;
+  font-weight: 600;
+  color: #000000 !important;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.select-high-contrast option {
+  color: #000000;
+  background-color: #ffffff;
+  font-weight: 500;
+  padding: 0.5rem;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+.select-high-contrast:hover {
+  border-color: #1f2937;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.select-high-contrast:focus {
+  outline: none;
+  border-color: #1e40af;
+  box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1), 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.select-high-contrast:disabled {
+  background-color: #e5e7eb;
+  color: #6b7280 !important;
+  border-color: #d1d5db;
+  cursor: not-allowed;
+}

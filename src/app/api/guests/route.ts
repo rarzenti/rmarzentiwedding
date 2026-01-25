@@ -82,7 +82,7 @@ export async function POST(req: Request) {
           } else {
             message += `<p>We have your group added. Feel free to RSVP at your convenience.</p>`;
           }
-          message += `<p>Ceremony: <b>2PM</b> at <b>St. Padre Pio Parish</b>, Lawrenceville (parking lot across from church).<br/>Reception: <b>5PM</b> at <b>Hilton Garden Inn Southpointe</b>.</p>`;
+          message += `<p>Ceremony: <b>2PM</b> at <b>St. Augustine Church (St. Padre Pio Parish)</b>, Lawrenceville (parking lot across from church).<br/>Reception: <b>5PM</b> at <b>Hilton Garden Inn Southpointe</b>.</p>`;
           await sendEmail({ to: grp.email, subject: 'Group Added / Updated', html: message });
         } catch (e) {
           console.error('Failed to send group email', e);
@@ -263,7 +263,7 @@ export async function PATCH(req: Request) {
               message += `<hr style="border: none; border-top: 1px solid #e5e7eb; margin: 25px 0;" />`;
               message += `<div style="background: #fef3c7; padding: 15px; border-radius: 8px; margin: 20px 0;">`;
               message += `<p style="color: #92400e; font-weight: bold; margin-bottom: 10px;">Event Details:</p>`;
-              message += `<p style="color: #78350f; margin: 5px 0;"><strong>Ceremony:</strong> 2:00 PM at St. Padre Pio Parish, Lawrenceville</p>`;
+              message += `<p style="color: #78350f; margin: 5px 0;"><strong>Ceremony:</strong> 2:00 PM at St. Augustine Church (St. Padre Pio Parish), Lawrenceville</p>`;
               message += `<p style="color: #78350f; margin: 5px 0;"><strong>Cocktail Hour:</strong> 5:00 PM at Hilton Garden Inn Southpointe</p>`;
               message += `<p style="color: #78350f; margin: 5px 0;"><strong>Reception:</strong> 6:00 PM at Hilton Garden Inn Southpointe</p>`;
               message += `</div>`;

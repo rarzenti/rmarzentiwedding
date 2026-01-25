@@ -167,22 +167,9 @@ export default function RSVPPage() {
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-4">
-      <h1 className="font-playfair text-5xl mb-8 text-black">RSVP</h1>
-
-      {/* Developer note */}
-      <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
-        <p className="text-amber-800 text-sm">
-          <span className="font-semibold">Note from the groom:</span> This wedding website was built from scratch by me (Ryan) because I enjoy making things unnecessarily complicated.
-          <br /><br /> If you encounter any issues or bugs, please don&apos;t hesitate to call or text me at <strong>(412) 926-4922.</strong>
-          <br /> Thank you for your participation in my science experiment😊!
-        </p>
-      </div>
-
-            {/* RSVP Date */}
-      <div className="mb-6 p-4 bg-pink-50 border border-purple-200 rounded-xl">
-        <p className="text-amber-800 text-sm">
-          <span className="font-semibold">Note from the bride:</span> Please respond by April 5th!! 
-        </p>
+      <div className="text-center mb-8">
+        <h1 className="font-playfair text-5xl text-black">RSVP</h1>
+        <p className="text-gray-600 text-lg mt-2">Kindly reply by April 6th</p>
       </div>
 
         {!selected ? (
@@ -197,6 +184,7 @@ export default function RSVPPage() {
               placeholder="Start typing your first or last name"
               className="form-input"
             />
+            
             {loading && <p className="mt-3 text-sm text-gray-700">Searching…</p>}
             {!loading && results.length > 0 && (
               <ul className="mt-4 grid gap-3">
@@ -236,6 +224,33 @@ export default function RSVPPage() {
                 })}
               </ul>
             )}
+            
+            {/* Developer note - positioned below search results */}
+            <div className="mt-4 p-4 bg-gradient-to-br from-slate-700 via-slate-600 to-slate-700 border border-slate-500 rounded-xl shadow-lg">
+              <div className="text-center space-y-2 font-sans">
+                <p className="font-bold text-blue-300 text-base">
+                  Note from the groom
+                </p>
+                
+                <p className="text-slate-200 text-sm leading-relaxed">
+                  This wedding website was built from scratch by me (Ryan)<br />
+                  because I enjoy making things unnecessarily complicated.
+                </p>
+                
+                <p className="text-slate-200 text-sm leading-relaxed">
+                  If you run into any issues or bugs,<br />
+                  feel free to call or text me at
+                </p>
+                
+                <p className="text-blue-300 font-bold text-lg">
+                  (412) 926-4922
+                </p>
+                
+                <p className="text-slate-300 text-sm italic">
+                  Thanks for being part of my science experiment! 😊
+                </p>
+              </div>
+            </div>
           </section>
         ) : (
           <section className="rounded-2xl border bg-white/90 backdrop-blur-sm p-6 shadow-sm">
@@ -488,10 +503,10 @@ export default function RSVPPage() {
 
             {/* Email opt-in modal */}
             {showEmailOptIn && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-                <div className="bg-white rounded-xl p-8 shadow-xl max-w-md w-full mx-4">
-                  <h3 className="font-playfair text-2xl mb-4 text-emerald-800 bg-emerald-100 rounded px-2 py-1">Would you like to receive an email confirmation?</h3>
-                  <p className="mb-6 text-gray-900 font-medium">We can send you a personalized confirmation email for your RSVP.</p>
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+                <div className="bg-white rounded-xl p-5 shadow-xl max-w-sm w-full">
+                  <h3 className="font-playfair text-lg mb-3 text-emerald-800 bg-emerald-100 rounded px-2 py-1.5 text-center">Email Confirmation?</h3>
+                  <p className="mb-4 text-gray-900 text-sm text-center">Get a personalized confirmation for your RSVP</p>
                   <form
                     onSubmit={async (e) => {
                       e.preventDefault();
@@ -535,30 +550,30 @@ export default function RSVPPage() {
                   >
                     <input
                       type="email"
-                      className="form-input mb-4"
-                      placeholder="Enter your email address"
+                      className="form-input mb-4 text-sm"
+                      placeholder="your@email.com"
                       value={groupEmail}
                       onChange={e => setGroupEmail(e.target.value)}
                       required
                       autoFocus
                     />
-                    <div className="flex gap-4 justify-end">
+                    <div className="flex gap-2 justify-center">
                       <button
                         type="button"
-                        className="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400 text-gray-900 font-semibold border border-gray-400 shadow-sm transition"
+                        className="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400 text-gray-900 font-semibold border border-gray-400 shadow-sm transition text-sm"
                         onClick={() => {
                           setEmailOptIn(false);
                           setShowEmailOptIn(false);
                           setTimeout(() => setStep('confirm'), 100);
                         }}
                       >
-                        No, thanks
+                        No thanks
                       </button>
                       <button
                         type="submit"
-                        className="px-4 py-2 rounded bg-black text-white hover:bg-gray-900 font-semibold"
+                        className="px-4 py-2 rounded bg-black text-white hover:bg-gray-900 font-semibold text-sm"
                       >
-                        Yes, send it!
+                        Yes, send!
                       </button>
                     </div>
                   </form>

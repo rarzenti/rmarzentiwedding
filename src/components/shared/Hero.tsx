@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 
 const images = [
@@ -107,7 +108,7 @@ export default function Hero() {
                 alt={image.alt}
                 fill
                 priority={index === currentSlide || index === (currentSlide + 1) % images.length}
-                className={`object-cover ${image.src === '/images/psuWedding.JPG' ? 'object-[center_30%]' : image.src === '/images/nyc.JPG' ? 'object-[center_15%]' : image.src === '/images/MR-Engagement-18.jpg' ? 'object-[center_40%]' : image.src === '/images/hiking.JPG' ? 'object-[25%_center] md:object-[center_20%]' : image.src === '/images/nycWedding.JPG' ? 'object-[center_10%]' : 'object-center'}`}
+                className={`object-cover ${image.src === '/images/psuWedding.JPG' ? 'object-[center_30%]' : image.src === '/images/nyc.JPG' ? 'object-[center_15%]' : image.src === '/images/MR-Engagement-18.jpg' ? 'object-[center_40%]' : image.src === '/images/hiking.JPG' ? 'object-[25%_center] md:object-[center_70%]' : image.src === '/images/nycWedding.JPG' ? 'object-[center_10%]' : 'object-center'}`}
                 quality={95}
                 sizes="100vw"
               />
@@ -132,7 +133,7 @@ export default function Hero() {
           </button>
 
           {/* Slide Indicators */}
-          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex space-x-3">
+          <div className="absolute bottom-32 left-1/2 -translate-x-1/2 flex space-x-3 z-40">
             {images.map((_, idx) => (
               <button
                 key={idx}
@@ -145,6 +146,20 @@ export default function Hero() {
                 aria-label={`Go to slide ${idx + 1}`}
               />
             ))}
+          </div>
+
+          {/* RSVP Button */}
+          <div className="absolute bottom-36 left-1/2 -translate-x-1/2 z-40">
+            <Link
+              href="/rsvp"
+              className="inline-block px-12 py-1.5 bg-white/95 hover:bg-white text-gray-900 font-playfair tracking-wider rounded-full shadow-2xl hover:shadow-xl transition-all duration-300 hover:scale-105 border border-white/50"
+            >
+              <div className="flex items-center gap-3">
+                <span className="text-xl">RSVP</span>
+                <div className="w-px h-5 bg-gray-300"></div>
+                <span className="text-xs font-sans">April 6th</span>
+              </div>
+            </Link>
           </div>
 
           {/* Title Overlay */}
