@@ -9,7 +9,7 @@ export default function WeddingPartyPage() {
       role: "Maid of Honor",
     },
     matronOfHonor: {
-      name: "Julia Stamatakis",
+      name: "Julia Rhodes",
       role: "Matron of Honor",
     },
     bridesmaids: [

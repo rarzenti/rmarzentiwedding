@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import * as XLSX from "xlsx";
 
 // Meal keys constant (file scope to avoid unnecessary dependencies in hooks)
-const mealKeys = ["Chicken","Beef","Fish","Vegetarian","Unselected"] as const;
+const mealKeys = ["Chicken","Beef","Vegetarian","Unselected"] as const;
 
 type MealKey = typeof mealKeys[number];
 
@@ -40,6 +40,7 @@ function MealsPageInner() {
   const router = useRouter();
   const view = (params.get("view") as "orders" | "allergies" | null) || "orders";
   const [tableNicknames, setTableNicknames] = useState<Record<number, string | null>>({});
+  const [tableCount, setTableCount] = useState<number>(20);
 
   const loadGuests = async () => {
     try {
@@ -60,7 +61,10 @@ function MealsPageInner() {
     try {
       const res = await fetch("/api/tables", { cache: "no-store" });
       const data = await res.json();
-      if (res.ok && data.nicknames) setTableNicknames(data.nicknames);
+      if (res.ok && data.nicknames) {
+        setTableNicknames(data.nicknames);
+        if (data.tableCount) setTableCount(data.tableCount);
+      }
     } catch {}
   };
 
@@ -70,7 +74,7 @@ function MealsPageInner() {
   const pending = useMemo(() => guests.filter(g => g.rsvpStatus === "PENDING"), [guests]);
 
   const overallMealCounts = useMemo(() => {
-    const counts: Record<MealKey, number> = { Chicken:0, Beef:0, Fish:0, Vegetarian:0, Unselected:0 };
+    const counts: Record<MealKey, number> = { Chicken:0, Beef:0, Vegetarian:0, Unselected:0 };
     confirmed.forEach(g => {
       const sel = g.foodSelection && mealKeys.includes(g.foodSelection as MealKey) ? g.foodSelection as MealKey : "Unselected";
       counts[sel] += 1;
@@ -80,15 +84,15 @@ function MealsPageInner() {
 
   const tables = useMemo(() => {
     const map = new Map<number, Guest[]>();
-    for (let i = 1; i <= 20; i++) map.set(i, []);
+    for (let i = 1; i <= tableCount; i++) map.set(i, []);
     confirmed.forEach(g => { if (g.tableNumber && map.has(g.tableNumber)) map.get(g.tableNumber)!.push(g); });
     return Array.from(map.entries());
-  }, [confirmed]);
+  }, [confirmed, tableCount]);
 
   const unassigned = useMemo(() => confirmed.filter(g => !g.tableNumber), [confirmed]);
 
   const tableMealBreakdown = (list: Guest[]) => {
-    const counts: Record<MealKey, number> = { Chicken:0, Beef:0, Fish:0, Vegetarian:0, Unselected:0 };
+    const counts: Record<MealKey, number> = { Chicken:0, Beef:0, Vegetarian:0, Unselected:0 };
     list.forEach(g => {
       const sel = g.foodSelection && mealKeys.includes(g.foodSelection as MealKey) ? g.foodSelection as MealKey : "Unselected";
       counts[sel] += 1;
@@ -193,7 +197,7 @@ function MealsPageInner() {
                   onChange={e=>setSelectedTable(e.target.value)}
                   className={`border-2 rounded-lg px-4 py-2 font-cormorant text-base tracking-wide bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-600 transition ${selectedTable!=="ALL"?"border-emerald-600 text-gray-900" : "border-emerald-400 text-gray-900"}`}
                 >
-                  <option value="ALL">All Tables (21)</option>
+                  <option value="ALL">All Tables ({tableCount + 1})</option>
                   <option value="UNASSIGNED">Unassigned</option>
                   {tables.map(([t]) => <option key={t} value={t}>{`Table ${t}`}</option>)}
                 </select>
