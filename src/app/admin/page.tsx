@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState, useRef, useCallback } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { PlusIcon, MinusIcon, TrashIcon, ChevronUpIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
 import { PencilIcon } from "@heroicons/react/24/outline";
 import { CheckCircleIcon, XCircleIcon, ClockIcon } from "@heroicons/react/24/solid";
-import { MEAL_OPTIONS, TITLE_OPTIONS, SUFFIX_OPTIONS, RSVP_STATUS_OPTIONS, GUEST_OF_OPTIONS } from "@/lib/config";
+import { MEAL_OPTIONS, TITLE_OPTIONS, SUFFIX_OPTIONS } from "@/lib/config";
 
 interface MemberDraft {
   title?: string;
