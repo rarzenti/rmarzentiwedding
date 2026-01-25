@@ -173,7 +173,7 @@ export default function RSVPPage() {
       <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
         <p className="text-amber-800 text-sm">
           <span className="font-semibold">Note from the groom:</span> This wedding website was built from scratch by me (Ryan) because I enjoy making things unnecessarily complicated.
-          <br /><br /> If you encounter any issues or bugs, please don't hesistate to call or text me at <strong>(412) 926-4922.</strong>
+          <br /><br /> If you encounter any issues or bugs, please don&apos;t hesitate to call or text me at <strong>(412) 926-4922.</strong>
           <br /> Thank you for your participation in my science experiment😊!
         </p>
       </div>
