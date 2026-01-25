@@ -106,11 +106,8 @@ export default function DetailsPage() {
             <div className="w-20 h-0.5 bg-gradient-to-r from-transparent via-purple-400 to-transparent mx-auto"></div>
           </div>
           <div className="text-center space-y-4">
-            <p className="font-playfair text-2xl font-light text-gray-900 tracking-wide">Bright Semi-Formal or Cocktail Attire Preferred</p>
-            <p className="text-gray-700 font-light leading-relaxed max-w-2xl mx-auto">
-              We invite you to dress in bright, vibrant colors that reflect the joy of the celebration! 
-              Semi-formal or cocktail attire works beautifully for this occasion.
-            </p>
+            <p className="font-playfair text-2xl font-light text-gray-900 tracking-wide">Spring/Summer Semi-Formal or Cocktail Attire Preferred</p>
+
           </div>
         </div>
       </div>
