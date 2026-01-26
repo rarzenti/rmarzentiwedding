@@ -101,7 +101,7 @@ export async function POST(req: Request) {
 export async function PATCH(req: Request) {
   try {
     const body = await req.json();
-    const { id, groupName, sendConfirmation, email, ...data } = body ?? {};
+    const { id, groupName, sendConfirmation, email, notifyPlusOne, plusOneFirstName, plusOneLastName, plusOneGroupName, plusOneDeclined, ...data } = body ?? {};
     if (!id || typeof id !== "string") {
       return NextResponse.json({ error: "id is required" }, { status: 400 });
     }
@@ -150,6 +150,31 @@ export async function PATCH(req: Request) {
         where: { id: updated.group.id },
         data: { email: email.trim() },
       });
+    }
+
+    // Send notification email to rmarzentiwedding@gmail.com when a +1 guest name is added
+    if (notifyPlusOne && plusOneFirstName && plusOneLastName) {
+      try {
+        const plusOneMessage = `
+          <div style="font-family: Georgia, serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <h1 style="color: #1f2937; font-size: 24px; margin-bottom: 20px;">New +1 Guest Added</h1>
+            <p style="color: #374151; font-size: 16px;">A guest has accepted their plus one and provided the following name:</p>
+            <div style="background: #ecfdf5; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #10b981;">
+              <p style="color: #065f46; font-size: 18px; margin: 0;"><strong>${plusOneFirstName} ${plusOneLastName}</strong></p>
+              <p style="color: #047857; font-size: 14px; margin-top: 10px;">Group: ${plusOneGroupName || 'Unknown'}</p>
+            </div>
+            <p style="color: #6b7280; font-size: 14px;">This guest has been automatically added to the database and will appear in the guest list.</p>
+          </div>
+        `;
+        await sendEmail({
+          to: "rmarzentiwedding@gmail.com",
+          subject: `New +1 Guest Added: ${plusOneFirstName} ${plusOneLastName}`,
+          html: plusOneMessage,
+        });
+        console.log(`Sent +1 notification email for ${plusOneFirstName} ${plusOneLastName}`);
+      } catch (e) {
+        console.error('Failed to send +1 notification email', e);
+      }
     }
 
     // Send confirmation email if requested
@@ -202,9 +227,16 @@ export async function PATCH(req: Request) {
                 }
               }
               
-              // Mention anyone who can't make it
-              if (noGuests.length > 0) {
-                const noNames = noGuests.map(g => g.firstName);
+              // Mention if they declined their plus one
+              if (plusOneDeclined) {
+                message += `<p style="color: #6b7280; font-size: 14px; margin-top: 15px;">We've noted that you will not be bringing a plus one.</p>`;
+              }
+              
+              // Mention anyone who can't make it (excluding declined +1 guests)
+              // Filter out any guest named "Guest" with empty last name (declined +1)
+              const actualNoGuests = noGuests.filter(g => !(g.firstName === 'Guest' && (!g.lastName || g.lastName.trim() === '')));
+              if (actualNoGuests.length > 0) {
+                const noNames = actualNoGuests.map(g => g.firstName);
                 const noFormatted = noNames.length > 1 ? `${noNames.slice(0, -1).join(', ')} and ${noNames[noNames.length - 1]}` : noNames[0];
                 message += `<p style="color: #6b7280; font-size: 14px; margin-top: 15px;">We're sorry to hear that ${noFormatted} won't be able to make it, but we completely understand.</p>`;
               }
@@ -223,8 +255,11 @@ export async function PATCH(req: Request) {
                 // No one is attending
                 message += `<p style="color: #374151; font-size: 16px;">We're sorry to hear you won't be able to join us on <strong>May 16th, 2026</strong>. We'll miss you, but we completely understand!</p>`;
                 
-                // Mention others who also can't make it
-                const othersNotAttending = noGuests.filter(g => g.id !== updated.id).map(g => g.firstName);
+                // Mention others who also can't make it (excluding declined +1 guests)
+                const othersNotAttending = noGuests
+                  .filter(g => g.id !== updated.id)
+                  .filter(g => !(g.firstName === 'Guest' && (!g.lastName || g.lastName.trim() === '')))
+                  .map(g => g.firstName);
                 if (othersNotAttending.length > 0) {
                   const othersFormatted = othersNotAttending.length > 1 
                     ? `${othersNotAttending.slice(0, -1).join(', ')} and ${othersNotAttending[othersNotAttending.length - 1]}`

@@ -26,6 +26,11 @@ interface RsvpGroup {
   guests: RsvpGuest[];
 }
 
+// Helper to detect if a guest is an unnamed +1
+const isPlusOneGuest = (guest: RsvpGuest) => {
+  return guest.firstName === "Guest" && (!guest.lastName || guest.lastName.trim() === "");
+};
+
 export default function RSVPPage() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<RsvpGroup[]>([]);
@@ -42,6 +47,14 @@ export default function RSVPPage() {
   const [, setEmailOptIn] = useState(false);
   const [respondingGuestError, setRespondingGuestError] = useState(false);
   const [showMealModal, setShowMealModal] = useState(false);
+  
+  // Plus one state
+  const [showPlusOneModal, setShowPlusOneModal] = useState(false);
+  const [plusOneGuestId, setPlusOneGuestId] = useState<string | null>(null);
+  const [plusOneFirstName, setPlusOneFirstName] = useState("");
+  const [plusOneLastName, setPlusOneLastName] = useState("");
+  const [plusOneDeclined, setPlusOneDeclined] = useState(false);
+  const [plusOneSaving, setPlusOneSaving] = useState(false);
 
   // Debounced search
   useEffect(() => {
@@ -82,6 +95,86 @@ export default function RSVPPage() {
     setStep('guest');
     setSubmitted(false);
     setError(null);
+    
+    // Reset plus one state
+    setPlusOneDeclined(false);
+    setPlusOneFirstName("");
+    setPlusOneLastName("");
+    
+    // Check if there's an unnamed +1 guest in the group
+    const plusOneGuest = withKidsDefault.guests.find(isPlusOneGuest);
+    if (plusOneGuest) {
+      setPlusOneGuestId(plusOneGuest.id);
+      setShowPlusOneModal(true);
+    }
+  };
+  
+  // Handle accepting the +1 and saving the name
+  const handlePlusOneAccept = async () => {
+    if (!plusOneFirstName.trim() || !plusOneLastName.trim()) {
+      alert("Please enter both first and last name for your guest.");
+      return;
+    }
+    
+    if (!selected || !plusOneGuestId) return;
+    
+    setPlusOneSaving(true);
+    try {
+      // Update the guest name in the database
+      const res = await fetch("/api/guests", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: plusOneGuestId,
+          firstName: plusOneFirstName.trim(),
+          lastName: plusOneLastName.trim(),
+          notifyPlusOne: true, // Flag to send notification email
+          groupName: selected.name,
+        }),
+      });
+      
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to save guest name");
+      }
+      
+      // Update local state with the new name
+      setSelected({
+        ...selected,
+        guests: selected.guests.map((g) =>
+          g.id === plusOneGuestId
+            ? { ...g, firstName: plusOneFirstName.trim(), lastName: plusOneLastName.trim() }
+            : g
+        ),
+      });
+      
+      setShowPlusOneModal(false);
+    } catch (e) {
+      console.error("Error saving plus one name:", e);
+      alert("Failed to save guest name. Please try again.");
+    } finally {
+      setPlusOneSaving(false);
+    }
+  };
+  
+  // Handle declining the +1
+  const handlePlusOneDecline = () => {
+    if (!selected || !plusOneGuestId) return;
+    
+    // Mark the +1 as declined (set RSVP to NO) and remove from the guests list for RSVP flow
+    setPlusOneDeclined(true);
+    
+    // Update local state - mark +1 as NO and filter them out of the active flow
+    setSelected({
+      ...selected,
+      guests: selected.guests.map((g) =>
+        g.id === plusOneGuestId
+          ? { ...g, rsvpStatus: "NO" as RsvpStatus, foodSelection: null, dietaryRestrictions: null }
+          : g
+      ),
+    });
+    
+    setShowPlusOneModal(false);
   };
 
   const updateLocal = (guestId: string, patch: Partial<RsvpGuest>) => {
@@ -97,12 +190,22 @@ export default function RSVPPage() {
       guests: selected.guests.map((m) => (m.id === guestId ? { ...m, ...patch } : m)),
     });
   };
+  
+  // Get the active guests for RSVP (excluding declined +1 that hasn't been named yet)
+  const activeGuests = useMemo(() => {
+    if (!selected) return [];
+    // If a +1 was declined, skip that guest in the flow (they remain as "Guest" with NO status)
+    if (plusOneDeclined && plusOneGuestId) {
+      return selected.guests.filter(g => g.id !== plusOneGuestId);
+    }
+    return selected.guests;
+  }, [selected, plusOneDeclined, plusOneGuestId]);
 
   const canSubmitGuest = useMemo(() => {
-    if (!selected) return false;
-    const g = selected.guests[currentGuestIdx];
+    if (!selected || activeGuests.length === 0) return false;
+    const g = activeGuests[currentGuestIdx];
     return g && (g.rsvpStatus === 'YES' || g.rsvpStatus === 'NO');
-  }, [selected, currentGuestIdx]);
+  }, [selected, activeGuests, currentGuestIdx]);
 
   const onSubmit = async () => {
     if (!selected) return;
@@ -117,7 +220,7 @@ export default function RSVPPage() {
     setError(null);
     setRespondingGuestError(false);
     try {
-      // Save all guests
+      // Save all guests (including the declined +1 if applicable)
       for (const g of selected.guests) {
         await fetch("/api/guests", {
           method: "PATCH",
@@ -129,6 +232,7 @@ export default function RSVPPage() {
             dietaryRestrictions: g.dietaryRestrictions ?? null,
             email: groupEmail || null,
             respondingGuestId: respondingGuestId,
+            plusOneDeclined: plusOneDeclined && g.id === plusOneGuestId, // Flag if this specific guest was a declined +1
           }),
         });
       }
@@ -272,9 +376,9 @@ export default function RSVPPage() {
             {step === 'guest' && (
               <div>
                 <p className="text-sm text-gray-700 mb-6">Please respond for each person below.</p>
-                {selected.guests.length > 0 && (
+                {activeGuests.length > 0 && (
                   <div className="rounded-xl border bg-white p-4 shadow-sm">
-                    <p className="font-medium mb-3 text-gray-900">{selected.guests[currentGuestIdx].title ? `${selected.guests[currentGuestIdx].title} ` : ""}{selected.guests[currentGuestIdx].firstName} {selected.guests[currentGuestIdx].lastName}</p>
+                    <p className="font-medium mb-3 text-gray-900">{activeGuests[currentGuestIdx].title ? `${activeGuests[currentGuestIdx].title} ` : ""}{activeGuests[currentGuestIdx].firstName} {activeGuests[currentGuestIdx].lastName}</p>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
                         <label className="block font-cormorant text-sm tracking-wide mb-2 text-gray-900 font-medium">Attending</label>
@@ -282,18 +386,18 @@ export default function RSVPPage() {
                           <label className="flex items-center gap-2">
                             <input
                               type="radio"
-                              name={`attend-${selected.guests[currentGuestIdx].id}`}
-                              checked={selected.guests[currentGuestIdx].rsvpStatus === "YES"}
-                              onChange={() => updateLocal(selected.guests[currentGuestIdx].id, { rsvpStatus: "YES" })}
+                              name={`attend-${activeGuests[currentGuestIdx].id}`}
+                              checked={activeGuests[currentGuestIdx].rsvpStatus === "YES"}
+                              onChange={() => updateLocal(activeGuests[currentGuestIdx].id, { rsvpStatus: "YES" })}
                             />
                             Yes
                           </label>
                           <label className="flex items-center gap-2">
                             <input
                               type="radio"
-                              name={`attend-${selected.guests[currentGuestIdx].id}`}
-                              checked={selected.guests[currentGuestIdx].rsvpStatus === "NO"}
-                              onChange={() => updateLocal(selected.guests[currentGuestIdx].id, { rsvpStatus: "NO" })}
+                              name={`attend-${activeGuests[currentGuestIdx].id}`}
+                              checked={activeGuests[currentGuestIdx].rsvpStatus === "NO"}
+                              onChange={() => updateLocal(activeGuests[currentGuestIdx].id, { rsvpStatus: "NO" })}
                             />
                             No
                           </label>
@@ -301,11 +405,11 @@ export default function RSVPPage() {
                       </div>
                       <div className="md:col-span-2">
                         <label className="block font-cormorant text-sm tracking-wide mb-2 text-gray-900 font-medium">Dinner selection</label>
-                        {selected.guests[currentGuestIdx].isChild ? (
+                        {activeGuests[currentGuestIdx].isChild ? (
                           <div className="w-full rounded-xl border-2 border-gray-300 px-4 py-3 bg-gray-50 text-gray-900 font-medium">
                             {KIDS_MEAL.emoji} {KIDS_MEAL.label} — {KIDS_MEAL.description}
                           </div>
-                        ) : selected.guests[currentGuestIdx].rsvpStatus === 'NO' ? (
+                        ) : activeGuests[currentGuestIdx].rsvpStatus === 'NO' ? (
                           <div className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 bg-gray-100 text-gray-500 italic">
                             Guest not attending
                           </div>
@@ -314,18 +418,18 @@ export default function RSVPPage() {
                             type="button"
                             onClick={() => setShowMealModal(true)}
                             className={`w-full text-left rounded-xl border-2 px-4 py-3 transition-all ${
-                              selected.guests[currentGuestIdx].foodSelection 
+                              activeGuests[currentGuestIdx].foodSelection 
                                 ? 'border-emerald-300 bg-emerald-50 hover:border-emerald-400' 
                                 : 'border-gray-300 bg-white hover:border-gray-400 hover:shadow-sm'
                             }`}
                           >
-                            {selected.guests[currentGuestIdx].foodSelection ? (
+                            {activeGuests[currentGuestIdx].foodSelection ? (
                               <div className="flex items-center justify-between">
                                 <div>
                                   <p className="text-gray-900 font-medium">
                                     {(() => {
-                                      const meal = getMealInfo(selected.guests[currentGuestIdx].foodSelection);
-                                      return meal ? `${meal.emoji} ${meal.label}` : selected.guests[currentGuestIdx].foodSelection;
+                                      const meal = getMealInfo(activeGuests[currentGuestIdx].foodSelection);
+                                      return meal ? `${meal.emoji} ${meal.label}` : activeGuests[currentGuestIdx].foodSelection;
                                     })()}
                                   </p>
                                   <p className="text-xs text-gray-500 mt-0.5">Tap to change selection</p>
@@ -345,11 +449,11 @@ export default function RSVPPage() {
                     <div className="mt-4">
                       <label className="block font-cormorant text-sm tracking-wide mb-2 text-gray-900 font-medium">Dietary restrictions</label>
                       <textarea
-                        value={selected.guests[currentGuestIdx].dietaryRestrictions ?? ""}
-                        onChange={(e) => updateLocal(selected.guests[currentGuestIdx].id, { dietaryRestrictions: e.target.value })}
-                        placeholder={selected.guests[currentGuestIdx].rsvpStatus === 'NO' ? "Guest not attending" : "Allergies or dietary needs (e.g., gluten-free, nut allergy)"}
-                        className={`form-textarea ${selected.guests[currentGuestIdx].rsvpStatus === 'NO' ? 'bg-gray-100 !text-gray-500 cursor-not-allowed' : ''}`}
-                        disabled={selected.guests[currentGuestIdx].rsvpStatus === 'NO'}
+                        value={activeGuests[currentGuestIdx].dietaryRestrictions ?? ""}
+                        onChange={(e) => updateLocal(activeGuests[currentGuestIdx].id, { dietaryRestrictions: e.target.value })}
+                        placeholder={activeGuests[currentGuestIdx].rsvpStatus === 'NO' ? "Guest not attending" : "Allergies or dietary needs (e.g., gluten-free, nut allergy)"}
+                        className={`form-textarea ${activeGuests[currentGuestIdx].rsvpStatus === 'NO' ? 'bg-gray-100 !text-gray-500 cursor-not-allowed' : ''}`}
+                        disabled={activeGuests[currentGuestIdx].rsvpStatus === 'NO'}
                       />
                     </div>
                     <div className="mt-6 flex justify-between">
@@ -360,14 +464,14 @@ export default function RSVPPage() {
                       >
                         Previous
                       </button>
-                      {currentGuestIdx < selected.guests.length - 1 ? (
+                      {currentGuestIdx < activeGuests.length - 1 ? (
                         <button
                           className="w-32 px-4 py-2 rounded bg-black text-white hover:bg-gray-900 font-semibold border border-gray-800 shadow-sm transition"
                           disabled={
                             !canSubmitGuest ||
-                            (selected.guests[currentGuestIdx].rsvpStatus === 'YES' && !selected.guests[currentGuestIdx].foodSelection)
+                            (activeGuests[currentGuestIdx].rsvpStatus === 'YES' && !activeGuests[currentGuestIdx].foodSelection)
                           }
-                          onClick={() => setCurrentGuestIdx((idx) => Math.min(selected.guests.length - 1, idx + 1))}
+                          onClick={() => setCurrentGuestIdx((idx) => Math.min(activeGuests.length - 1, idx + 1))}
                         >
                           Next
                         </button>
@@ -376,7 +480,7 @@ export default function RSVPPage() {
                           className="w-32 px-4 py-2 rounded bg-black text-white hover:bg-gray-900 font-semibold border border-gray-800 shadow-sm transition"
                           disabled={
                             !canSubmitGuest ||
-                            (selected.guests[currentGuestIdx].rsvpStatus === 'YES' && !selected.guests[currentGuestIdx].foodSelection)
+                            (activeGuests[currentGuestIdx].rsvpStatus === 'YES' && !activeGuests[currentGuestIdx].foodSelection)
                           }
                           onClick={() => setStep('email')}
                         >
@@ -439,13 +543,13 @@ export default function RSVPPage() {
             {step === 'done' && <div />}
 
             {/* Meal Selection Modal */}
-            {showMealModal && selected && (
+            {showMealModal && selected && activeGuests.length > 0 && (
               <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
                 <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full mx-4 overflow-hidden">
                   {/* Header */}
                   <div className="bg-gradient-to-r from-gray-900 to-gray-800 px-6 py-5 text-white">
                     <p className="text-sm uppercase tracking-widest text-gray-300 mb-1">Dinner Selection for</p>
-                    <h3 className="font-playfair text-2xl">{selected.guests[currentGuestIdx].firstName} {selected.guests[currentGuestIdx].lastName}</h3>
+                    <h3 className="font-playfair text-2xl">{activeGuests[currentGuestIdx].firstName} {activeGuests[currentGuestIdx].lastName}</h3>
                   </div>
                   
                   {/* Menu Options */}
@@ -455,11 +559,11 @@ export default function RSVPPage() {
                         key={meal.value}
                         type="button"
                         onClick={() => {
-                          updateLocal(selected.guests[currentGuestIdx].id, { foodSelection: meal.value });
+                          updateLocal(activeGuests[currentGuestIdx].id, { foodSelection: meal.value });
                           setShowMealModal(false);
                         }}
                         className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
-                          selected.guests[currentGuestIdx].foodSelection === meal.value
+                          activeGuests[currentGuestIdx].foodSelection === meal.value
                             ? 'border-emerald-500 bg-emerald-50 ring-2 ring-emerald-200'
                             : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
                         }`}
@@ -479,7 +583,7 @@ export default function RSVPPage() {
                               </div>
                             )}
                           </div>
-                          {selected.guests[currentGuestIdx].foodSelection === meal.value && (
+                          {activeGuests[currentGuestIdx].foodSelection === meal.value && (
                             <span className="text-emerald-600 text-xl">✓</span>
                           )}
                         </div>
@@ -495,6 +599,68 @@ export default function RSVPPage() {
                       className="w-full py-2 text-gray-600 hover:text-gray-900 font-medium transition"
                     >
                       Close
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Plus One Modal */}
+            {showPlusOneModal && selected && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+                <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden">
+                  {/* Header */}
+                  <div className="bg-gradient-to-r from-emerald-700 to-emerald-600 px-6 py-5 text-white">
+                    <h3 className="font-playfair text-2xl">You Have a Plus One! 🎉</h3>
+                    <p className="text-emerald-100 text-sm mt-1">We&apos;ve reserved a spot for a guest of your choice</p>
+                  </div>
+                  
+                  {/* Content */}
+                  <div className="p-6">
+                    <p className="text-gray-700 mb-6">
+                      Would you like to bring a guest to the wedding? If yes, please enter their name below.
+                    </p>
+                    
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Guest&apos;s First Name</label>
+                        <input
+                          type="text"
+                          value={plusOneFirstName}
+                          onChange={(e) => setPlusOneFirstName(e.target.value)}
+                          placeholder="First name"
+                          className="form-input"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Guest&apos;s Last Name</label>
+                        <input
+                          type="text"
+                          value={plusOneLastName}
+                          onChange={(e) => setPlusOneLastName(e.target.value)}
+                          placeholder="Last name"
+                          className="form-input"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Footer */}
+                  <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex gap-3">
+                    <button
+                      type="button"
+                      onClick={handlePlusOneDecline}
+                      className="flex-1 py-2.5 px-4 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium transition"
+                    >
+                      No, just me
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handlePlusOneAccept}
+                      disabled={plusOneSaving}
+                      className="flex-1 py-2.5 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-medium transition disabled:opacity-50"
+                    >
+                      {plusOneSaving ? 'Saving...' : 'Yes, add guest'}
                     </button>
                   </div>
                 </div>
@@ -532,6 +698,7 @@ export default function RSVPPage() {
                                 dietaryRestrictions: g.dietaryRestrictions ?? null,
                                 email: emailToSend,
                                 sendConfirmation: true,
+                                plusOneDeclined: plusOneDeclined, // Include this for confirmation email
                               }),
                             });
                             
