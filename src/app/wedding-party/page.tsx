@@ -1,4 +1,29 @@
+"use client";
+
+import { useState } from "react";
+
 export default function WeddingPartyPage() {
+  const [flowers, setFlowers] = useState<{ id: number; left: number; emoji: string; delay: number; duration: number }[]>([]);
+
+  const triggerFlowerRain = () => {
+    const flowerEmojis = ['🌸', '🌷', '🌺', '🌻', '🌼', '💐', '🪻', '🪷', '✿', '❀'];
+    const newFlowers = Array.from({ length: 100 }, (_, i) => ({
+      id: Date.now() + i,
+      left: Math.random() * 100,
+      emoji: flowerEmojis[Math.floor(Math.random() * flowerEmojis.length)],
+      delay: Math.random() * 2,
+      duration: 4 + Math.random() * 4,
+    }));
+    // Add new flowers to existing ones instead of replacing
+    setFlowers(prev => [...prev, ...newFlowers]);
+    
+    // Clear only these flowers after animation completes
+    const flowerIds = newFlowers.map(f => f.id);
+    setTimeout(() => {
+      setFlowers(prev => prev.filter(f => !flowerIds.includes(f.id)));
+    }, 10000);
+  };
+
   const bridesSide = {
     bride: {
       name: "Marsha Stamatakis",
@@ -38,7 +63,42 @@ export default function WeddingPartyPage() {
   };
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-12">
+    <main className="mx-auto max-w-6xl px-4 py-12 relative overflow-hidden">
+      {/* Falling Flowers Animation */}
+      {flowers.map((flower) => (
+        <div
+          key={flower.id}
+          className="fixed pointer-events-none z-50 text-3xl animate-fall"
+          style={{
+            left: `${flower.left}%`,
+            top: '-50px',
+            animationDelay: `${flower.delay}s`,
+            animationDuration: `${flower.duration}s`,
+          }}
+        >
+          {flower.emoji}
+        </div>
+      ))}
+      
+      <style jsx>{`
+        @keyframes fall {
+          0% {
+            transform: translateY(0) rotate(0deg);
+            opacity: 1;
+          }
+          85% {
+            opacity: 1;
+          }
+          100% {
+            transform: translateY(calc(100vh + 100px)) rotate(720deg);
+            opacity: 0;
+          }
+        }
+        .animate-fall {
+          animation: fall linear forwards;
+        }
+      `}</style>
+
       <div className="text-center mb-12">
         <h1 className="font-playfair text-4xl font-light text-gray-900 mb-3 tracking-wide">
           Wedding Party
@@ -133,6 +193,34 @@ export default function WeddingPartyPage() {
                 </p>
               </div>
             ))}
+            
+            {/* Flower Girl - Special Card */}
+            <div className="relative mt-4">
+              {/* Decorative flowers */}
+              <div className="absolute -top-2 -left-2 text-2xl">🌸</div>
+              <div className="absolute -top-2 -right-2 text-2xl">🌸</div>
+              <div className="absolute -bottom-2 -left-2 text-2xl">🌷</div>
+              <div className="absolute -bottom-2 -right-2 text-2xl">🌷</div>
+              
+              <div 
+                className="bg-gradient-to-br from-pink-100 via-rose-50 to-pink-100 p-6 rounded-2xl shadow-xl border-2 border-pink-200 text-center cursor-pointer hover:shadow-2xl hover:scale-[1.02] transition-all duration-300"
+                onClick={triggerFlowerRain}
+              >
+                <div className="mb-3">
+                  <span className="text-3xl">👑</span>
+                </div>
+                <h4 className="font-playfair text-sm font-light text-pink-800 mb-2 tracking-widest uppercase">
+                  Flower Girl
+                </h4>
+                <div className="w-12 h-0.5 bg-gradient-to-r from-transparent via-pink-400 to-transparent mx-auto mb-3"></div>
+                <p className="font-playfair text-lg font-light text-gray-800 tracking-wide">
+                  Ms. Princess Perry Stamatakis
+                </p>
+                <p className="font-cormorant text-xs text-pink-600 mt-2 italic">
+                  
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 

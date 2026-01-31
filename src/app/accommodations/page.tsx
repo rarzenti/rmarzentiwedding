@@ -56,6 +56,7 @@ export default function AccommodationsPage() {
               <div className="w-16 h-0.5 bg-gradient-to-r from-transparent via-gray-400 to-transparent mx-auto mb-4"></div>
               <p className="text-gray-600 mb-2 font-light">Special rates available for wedding guests</p>
               <p className="text-gray-500 text-sm italic">Please book by April 10, 2026</p>
+              <p className="text-gray-500 text-sm italic">We cannot guarantee rooms will be available after that date.</p>
             </div>
             
             <div className="text-center">
@@ -70,6 +71,12 @@ export default function AccommodationsPage() {
               <p className="text-gray-500 text-xs mt-4 italic">
                 Note: Default reservation is for Friday & Saturday nights. Please adjust dates as needed.
               </p>
+              <div className="mt-6 pt-6 border-t border-gray-200">
+                <p className="text-gray-600 text-sm">
+                  If no rooms are available in the hotel block, please call or text<br />
+                  <span className="font-medium text-gray-800"><b>Ryan:</b> (412) 926-4922 <br /> <b>Marsha: </b>(412) 302-7179</span>
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -99,6 +106,34 @@ export default function AccommodationsPage() {
               <h4 className="font-playfair text-xl font-light text-gray-800 mb-2 tracking-wide">Holiday Inn Express Pittsburgh Southpointe</h4>
               <p className="text-gray-600 font-light">4000 Horizon Vue Drive, Canonsburg, Pennsylvania 15317</p>
               <p className="text-gray-500 text-sm mt-2">(724) 743-4300</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Breakfast Options */}
+      <div className="mb-20">
+        <div className="text-center mb-10">
+          <h2 className="font-playfair text-3xl font-light text-gray-800 mb-4 tracking-wide">Sunday Breakfast</h2>
+          <div className="w-20 h-0.5 bg-gradient-to-r from-transparent via-gray-400 to-transparent mx-auto mb-6"></div>
+        </div>
+        
+        <div className="grid md:grid-cols-2 gap-6">
+          <div className="bg-gradient-to-br from-blue-50 to-white p-8 rounded-2xl shadow-lg border border-blue-100">
+            <h3 className="font-playfair text-2xl font-light text-gray-800 mb-4 text-center tracking-wide">Hilton Garden Inn</h3>
+            <div className="text-center space-y-3">
+              <p className="text-gray-700 font-light">Hotel Breakfast</p>
+              <p className="text-gray-600 text-lg"><span className="font-medium">Sunday:</span> 7:00 AM - 11:00 AM</p>
+              <p className="text-gray-600 text-sm mt-3">$17/person</p>
+            </div>
+          </div>
+          
+          <div className="bg-gradient-to-br from-amber-50 to-white p-8 rounded-2xl shadow-lg border border-amber-100">
+            <h3 className="font-playfair text-2xl font-light text-gray-800 mb-4 text-center tracking-wide">Jackson&apos;s Restaurant</h3>
+            <div className="text-center space-y-3">
+              <p className="text-gray-700 font-light">Sunday Brunch</p>
+              <p className="text-gray-600 text-lg"><span className="font-medium">Sunday:</span> 10:00 AM - 2:00 PM</p>
+              <p className="text-gray-600 text-sm mt-3">Menu pricing</p>
             </div>
           </div>
         </div>

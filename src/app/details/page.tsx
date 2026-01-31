@@ -100,13 +100,13 @@ export default function DetailsPage() {
 
       {/* Attire */}
       <div className="mb-20">
-        <div className="bg-gradient-to-br from-purple-50 to-white p-10 rounded-2xl shadow-lg border border-purple-100">
+        <div className="bg-gradient-to-br from-puffrple-50 to-white p-10 rounded-2xl shadow-lg border border-purple-100">
           <div className="text-center mb-8">
             <h2 className="font-playfair text-4xl font-light text-gray-800 mb-4 tracking-wide">Attire</h2>
             <div className="w-20 h-0.5 bg-gradient-to-r from-transparent via-purple-400 to-transparent mx-auto"></div>
           </div>
           <div className="text-center space-y-4">
-            <p className="font-playfair text-2xl font-light text-gray-900 tracking-wide">Spring/Summer Semi-Formal or Cocktail Attire Preferred</p>
+            <p className="font-playfair text-2xl font-light text-gray-900 tracking-wide">Spring Semi-Formal or Cocktail Attire Preferred</p>
 
           </div>
         </div>
@@ -145,8 +145,8 @@ export default function DetailsPage() {
               <h3 className="font-playfair text-2xl font-light text-blue-900 mb-4 tracking-wide">Transportation Between Venues</h3>
               <div className="w-16 h-0.5 bg-gradient-to-r from-transparent via-blue-400 to-transparent mx-auto mb-4"></div>
               <p className="text-blue-800 font-light leading-relaxed max-w-2xl">
-                Please note that you will need to drive from the ceremony to the reception venue. 
-                The drive is approximately 30 minutes. Uber and Lyft services are widely available.
+                Please note that you will need to arrange transportation to and from the ceremony to the reception venue (hotel). 
+                The drive is approximately 30 minutes. <br /> Uber and Lyft services are widely available.
               </p>
             </div>
           </div>
@@ -241,14 +241,14 @@ export default function DetailsPage() {
         <div className="bg-gradient-to-br from-gray-50 to-white p-8 rounded-2xl shadow-lg border border-gray-100">
           <div className="bg-gray-100 rounded-xl overflow-hidden mb-8" style={{ height: '500px' }}>
             <iframe
-              src="https://www.google.com/maps/embed?pb=!1m28!1m12!1m3!1d50000!2d-80.0668!3d40.3746!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!4m13!3e0!4m5!1s0x8834f20c32b85095%3A0x7c2f6df1bdbb5f2a!2s225%2037th%20St%2C%20Pittsburgh%2C%20PA%2015201%2C%20USA!3m2!1d40.4659399!2d-79.96113!4m5!1s0x8834c7d8e1a5e40b%3A0x4e5b9c7e8f9a0b1c!2s1000%20Corporate%20Dr%2C%20Canonsburg%2C%20PA%2015317%2C%20USA!3m2!1d40.282838!2d-80.171637!5e0!3m2!1sen!2sus!4v1703000000000!5m2!1sen!2sus"
+              src="https://www.google.com/maps/embed/v1/directions?key=AIzaSyBm2pzSOqr8da9d15CvDXLXA3w4p6vdGzQ&origin=St+Augustine+Church,+225+37th+St,+Pittsburgh,+PA+15201&destination=Hilton+Garden+Inn+Pittsburgh+Southpointe,+1000+Corporate+Dr,+Canonsburg,+PA+15317&mode=driving"
               width="100%"
               height="100%"
               style={{ border: 0 }}
               allowFullScreen
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
-              title="Wedding Venue Locations - Directions from Ceremony to Reception"
+              title="Directions from Ceremony to Reception"
             ></iframe>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

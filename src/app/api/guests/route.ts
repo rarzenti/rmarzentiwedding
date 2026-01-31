@@ -101,7 +101,7 @@ export async function POST(req: Request) {
 export async function PATCH(req: Request) {
   try {
     const body = await req.json();
-    const { id, groupName, sendConfirmation, email, notifyPlusOne, plusOneFirstName, plusOneLastName, plusOneGroupName, plusOneDeclined, ...data } = body ?? {};
+    const { id, groupName, sendConfirmation, email, notifyPlusOne, plusOneFirstName, plusOneLastName, plusOneGroupName, plusOneDeclined, sendRsvpNotification, ...data } = body ?? {};
     if (!id || typeof id !== "string") {
       return NextResponse.json({ error: "id is required" }, { status: 400 });
     }
@@ -174,6 +174,55 @@ export async function PATCH(req: Request) {
         console.log(`Sent +1 notification email for ${plusOneFirstName} ${plusOneLastName}`);
       } catch (e) {
         console.error('Failed to send +1 notification email', e);
+      }
+    }
+
+    // Send RSVP notification email to rmarzentiwedding@gmail.com (one per group)
+    if (sendRsvpNotification && updated.rsvpStatus && updated.group?.id) {
+      try {
+        const grp = await prisma.group.findUnique({
+          where: { id: updated.group.id },
+          select: { name: true, guests: { select: { id: true, firstName: true, lastName: true, rsvpStatus: true, foodSelection: true, dietaryRestrictions: true } } },
+        });
+
+        if (grp) {
+          // Build guest list with their RSVP info
+          let guestListHtml = '';
+          grp.guests.forEach(guest => {
+            const statusText = guest.rsvpStatus === 'YES' ? 'Attending' : guest.rsvpStatus === 'NO' ? 'Not Attending' : 'Pending';
+            guestListHtml += `
+              <div style="margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #e5e7eb;">
+                <p style="color: #374151; font-size: 16px; margin: 0 0 5px 0;"><strong>${guest.firstName} ${guest.lastName}</strong></p>
+                <p style="color: #374151; font-size: 14px; margin: 5px 0;"><strong>Response:</strong> ${statusText}</p>
+            `;
+            
+            if (guest.foodSelection) {
+              guestListHtml += `<p style="color: #374151; font-size: 14px; margin: 5px 0;"><strong>Meal Selection:</strong> ${getMealDescription(guest.foodSelection)}</p>`;
+            }
+            
+            if (guest.dietaryRestrictions && guest.dietaryRestrictions.trim()) {
+              guestListHtml += `<p style="color: #374151; font-size: 14px; margin: 5px 0;"><strong>Dietary Restrictions:</strong> ${guest.dietaryRestrictions}</p>`;
+            }
+            
+            guestListHtml += `</div>`;
+          });
+
+          const rsvpMessage = `
+            <div style="font-family: Georgia, serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+              <h2 style="color: #1f2937; font-size: 20px; margin-bottom: 15px;">${grp.name}</h2>
+              ${guestListHtml}
+            </div>
+          `;
+
+          await sendEmail({
+            to: "rmarzentiwedding@gmail.com",
+            subject: `${grp.name} has RSVP'd`,
+            html: rsvpMessage,
+          });
+          console.log(`Sent RSVP notification for group ${grp.name}`);
+        }
+      } catch (e) {
+        console.error('Failed to send RSVP notification email', e);
       }
     }
 

@@ -221,7 +221,10 @@ export default function RSVPPage() {
     setRespondingGuestError(false);
     try {
       // Save all guests (including the declined +1 if applicable)
-      for (const g of selected.guests) {
+      const guestCount = selected.guests.length;
+      for (let i = 0; i < guestCount; i++) {
+        const g = selected.guests[i];
+        const isLastGuest = i === guestCount - 1;
         await fetch("/api/guests", {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -233,6 +236,7 @@ export default function RSVPPage() {
             email: groupEmail || null,
             respondingGuestId: respondingGuestId,
             plusOneDeclined: plusOneDeclined && g.id === plusOneGuestId, // Flag if this specific guest was a declined +1
+            sendRsvpNotification: isLastGuest, // Only send notification email on last guest
           }),
         });
       }
