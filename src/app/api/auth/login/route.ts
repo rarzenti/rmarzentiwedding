@@ -3,9 +3,15 @@ import { NextResponse } from "next/server";
 export async function POST(req: Request) {
   try {
     const { email, password } = await req.json();
-    // Simple hardcoded credentials (can move to env later)
-    const OK_EMAIL = process.env.ADMIN_EMAIL || "admin@wedding.com";
-    const OK_PASS = process.env.ADMIN_PASSWORD || "letmein";
+    
+    // Get credentials from environment variables (required for production)
+    const OK_EMAIL = process.env.ADMIN_EMAIL;
+    const OK_PASS = process.env.ADMIN_PASSWORD;
+    
+    if (!OK_EMAIL || !OK_PASS) {
+      console.error("Missing ADMIN_EMAIL or ADMIN_PASSWORD environment variables");
+      return NextResponse.json({ error: "Server configuration error" }, { status: 500 });
+    }
 
     if (email === OK_EMAIL && password === OK_PASS) {
       const res = NextResponse.json({ ok: true });
