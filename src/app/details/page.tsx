@@ -241,7 +241,7 @@ export default function DetailsPage() {
         <div className="bg-gradient-to-br from-gray-50 to-white p-8 rounded-2xl shadow-lg border border-gray-100">
           <div className="bg-gray-100 rounded-xl overflow-hidden mb-8" style={{ height: '500px' }}>
             <iframe
-              src="https://www.google.com/maps/embed/v1/directions?key=AIzaSyBm2pzSOqr8da9d15CvDXLXA3w4p6vdGzQ&origin=St+Augustine+Church,+225+37th+St,+Pittsburgh,+PA+15201&destination=Hilton+Garden+Inn+Pittsburgh+Southpointe,+1000+Corporate+Dr,+Canonsburg,+PA+15317&mode=driving"
+              src={`https://www.google.com/maps/embed/v1/directions?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&origin=St+Augustine+Church,+225+37th+St,+Pittsburgh,+PA+15201&destination=Hilton+Garden+Inn+Pittsburgh+Southpointe,+1000+Corporate+Dr,+Canonsburg,+PA+15317&mode=driving`}
               width="100%"
               height="100%"
               style={{ border: 0 }}

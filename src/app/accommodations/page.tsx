@@ -1,6 +1,8 @@
 import Image from "next/image";
 
 export default function AccommodationsPage() {
+  const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+
   return (
     <main className="mx-auto max-w-4xl px-4 py-16">
       <div className="text-center mb-12">
@@ -153,6 +155,22 @@ export default function AccommodationsPage() {
         <br />
           or call hotel directly at: (724) 743-5000
         </p>
+      </div>
+
+      {/* Map Section */}
+      <div className="bg-gradient-to-br from-gray-50 to-white p-8 rounded-2xl shadow-lg border border-gray-100">
+        <div className="bg-gray-100 rounded-xl overflow-hidden mb-8" style={{ height: '500px' }}>
+          <iframe
+            src={`https://www.google.com/maps/embed/v1/directions?key=${googleMapsApiKey}&origin=St+Augustine+Church,+225+37th+St,+Pittsburgh,+PA+15201&destination=Hilton+Garden+Inn+Pittsburgh+Southpointe,+1000+Corporate+Dr,+Canonsburg,+PA+15317&mode=driving`}
+            width="100%"
+            height="100%"
+            style={{ border: 0 }}
+            allowFullScreen
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+            title="Directions from Ceremony to Reception"
+          ></iframe>
+        </div>
       </div>
     </main>
   );
