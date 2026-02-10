@@ -58,6 +58,7 @@ export default function WeddingPartyPage() {
       { name: "Ryan Metro" },
       { name: "Steve Barker" },
       { name: "Nick Bartholomew" },
+      { name: "Jimmy Ungerman" },
       { name: "Tyler Iddon" },
     ],
   };
