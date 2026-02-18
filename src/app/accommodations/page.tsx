@@ -116,7 +116,7 @@ export default function AccommodationsPage() {
       {/* Breakfast Options */}
       <div className="mb-20">
         <div className="text-center mb-10">
-          <h2 className="font-playfair text-3xl font-light text-gray-800 mb-4 tracking-wide">Sunday Breakfast</h2>
+          <h2 className="font-playfair text-3xl font-light text-gray-800 mb-4 tracking-wide">Breakfast Sat & Sun</h2>
           <div className="w-20 h-0.5 bg-gradient-to-r from-transparent via-gray-400 to-transparent mx-auto mb-6"></div>
         </div>
         
