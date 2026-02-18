@@ -125,7 +125,7 @@ export default function AccommodationsPage() {
             <h3 className="font-playfair text-2xl font-light text-gray-800 mb-4 text-center tracking-wide">Hilton Garden Inn</h3>
             <div className="text-center space-y-3">
               <p className="text-gray-700 font-light">Hotel Breakfast</p>
-              <p className="text-gray-600 text-lg"><span className="font-medium">Sunday:</span> 7:00 AM - 11:00 AM</p>
+              <p className="text-gray-600 text-lg"><span className="font-medium">Sunday:</span> 6:00 AM - 11:00 AM</p>
               <p className="text-gray-600 text-sm mt-3">$17/person</p>
             </div>
           </div>
