@@ -277,7 +277,7 @@ export default function RSVPPage() {
     <main className="mx-auto max-w-3xl px-6 py-4">
       <div className="text-center mb-8">
         <h1 className="font-playfair text-5xl text-black">RSVP</h1>
-        <p className="text-gray-600 text-lg mt-2">Kindly reply by April 6th</p>
+        <p className="text-gray-600 text-lg mt-2">Kindly reply by Monday, April 6th</p>
       </div>
 
         {!selected ? (
