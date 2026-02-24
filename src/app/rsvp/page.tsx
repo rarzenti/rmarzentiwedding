@@ -50,11 +50,13 @@ export default function RSVPPage() {
   
   // Plus one state
   const [showPlusOneModal, setShowPlusOneModal] = useState(false);
+  const [showPlusOneNotice, setShowPlusOneNotice] = useState(false);
   const [plusOneGuestId, setPlusOneGuestId] = useState<string | null>(null);
   const [plusOneFirstName, setPlusOneFirstName] = useState("");
   const [plusOneLastName, setPlusOneLastName] = useState("");
   const [plusOneDeclined, setPlusOneDeclined] = useState(false);
   const [plusOneSaving, setPlusOneSaving] = useState(false);
+  const [plusOneAccepted, setPlusOneAccepted] = useState(false);
 
   // Debounced search
   useEffect(() => {
@@ -98,6 +100,7 @@ export default function RSVPPage() {
     
     // Reset plus one state
     setPlusOneDeclined(false);
+    setPlusOneAccepted(false);
     setPlusOneFirstName("");
     setPlusOneLastName("");
     
@@ -105,14 +108,14 @@ export default function RSVPPage() {
     const plusOneGuest = withKidsDefault.guests.find(isPlusOneGuest);
     if (plusOneGuest) {
       setPlusOneGuestId(plusOneGuest.id);
-      setShowPlusOneModal(true);
+      setShowPlusOneNotice(true);
     }
   };
   
   // Handle accepting the +1 and saving the name
   const handlePlusOneAccept = async () => {
-    if (!plusOneFirstName.trim()) {
-      alert("Please enter a first name for your guest.");
+    if (!plusOneFirstName.trim() || !plusOneLastName.trim()) {
+      alert("Please enter both first and last name for your guest.");
       return;
     }
     
@@ -148,7 +151,11 @@ export default function RSVPPage() {
         ),
       });
       
+      setPlusOneAccepted(true);
       setShowPlusOneModal(false);
+      // Plus one is now the only guest in activeGuests, so index 0
+      setCurrentGuestIdx(0);
+      setStep('guest');
     } catch (e) {
       console.error("Error saving plus one name:", e);
       alert("Failed to save guest name. Please try again.");
@@ -175,6 +182,7 @@ export default function RSVPPage() {
     });
     
     setShowPlusOneModal(false);
+    setStep('email');
   };
 
   const updateLocal = (guestId: string, patch: Partial<RsvpGuest>) => {
@@ -191,15 +199,26 @@ export default function RSVPPage() {
     });
   };
   
-  // Get the active guests for RSVP (excluding declined +1 that hasn't been named yet)
+  // Get the active guests for RSVP
+  // Before plus one is resolved: exclude the plus one guest from the flow
+  // After plus one is accepted: show ONLY the plus one (named guests are already done)
+  // After plus one is declined: exclude them permanently
   const activeGuests = useMemo(() => {
     if (!selected) return [];
-    // If a +1 was declined, skip that guest in the flow (they remain as "Guest" with NO status)
-    if (plusOneDeclined && plusOneGuestId) {
+    if (plusOneGuestId) {
+      if (plusOneDeclined) {
+        // Declined: remove plus one entirely
+        return selected.guests.filter(g => g.id !== plusOneGuestId);
+      }
+      if (plusOneAccepted) {
+        // Accepted: show only the plus one guest for their RSVP
+        return selected.guests.filter(g => g.id === plusOneGuestId);
+      }
+      // Not yet resolved: exclude plus one so named guests go first
       return selected.guests.filter(g => g.id !== plusOneGuestId);
     }
     return selected.guests;
-  }, [selected, plusOneDeclined, plusOneGuestId]);
+  }, [selected, plusOneDeclined, plusOneAccepted, plusOneGuestId]);
 
   const canSubmitGuest = useMemo(() => {
     if (!selected || activeGuests.length === 0) return false;
@@ -486,7 +505,14 @@ export default function RSVPPage() {
                             !canSubmitGuest ||
                             (activeGuests[currentGuestIdx].rsvpStatus === 'YES' && !activeGuests[currentGuestIdx].foodSelection)
                           }
-                          onClick={() => setStep('email')}
+                          onClick={() => {
+                            // If there's an unresolved plus one, show the name entry modal
+                            if (plusOneGuestId && !plusOneAccepted && !plusOneDeclined) {
+                              setShowPlusOneModal(true);
+                            } else {
+                              setStep('email');
+                            }
+                          }}
                         >
                           Continue
                         </button>
@@ -609,8 +635,8 @@ export default function RSVPPage() {
               </div>
             )}
 
-            {/* Plus One Modal */}
-            {showPlusOneModal && selected && (
+            {/* Plus One Notice Popup - shown when group is first selected */}
+            {showPlusOneNotice && selected && (
               <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
                 <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden">
                   {/* Header */}
@@ -621,13 +647,47 @@ export default function RSVPPage() {
                   
                   {/* Content */}
                   <div className="p-6">
+                    <p className="text-gray-700 mb-2">
+                      Great news — you have a plus one!
+                    </p>
+                    <p className="text-gray-600 text-sm">
+                      Please complete the meal selections for your group first. After that, you&apos;ll be prompted to enter your guest&apos;s information.
+                    </p>
+                  </div>
+
+                  {/* Footer */}
+                  <div className="px-6 py-4 bg-gray-50 border-t border-gray-100">
+                    <button
+                      type="button"
+                      onClick={() => setShowPlusOneNotice(false)}
+                      className="w-full py-2.5 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-medium transition"
+                    >
+                      Got it!
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Plus One Name Entry Modal - shown after all named guests complete their RSVP */}
+            {showPlusOneModal && selected && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+                <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden">
+                  {/* Header */}
+                  <div className="bg-gradient-to-r from-emerald-700 to-emerald-600 px-6 py-5 text-white">
+                    <h3 className="font-playfair text-2xl">Add Your Plus One 🎉</h3>
+                    <p className="text-emerald-100 text-sm mt-1">Enter your guest&apos;s name to add them to the RSVP</p>
+                  </div>
+                  
+                  {/* Content */}
+                  <div className="p-6">
                     <p className="text-gray-700 mb-6">
                       Would you like to bring a guest to the wedding? If yes, please enter their name below.
                     </p>
                     
                     <div className="space-y-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Guest&apos;s First Name</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Guest&apos;s First Name *</label>
                         <input
                           type="text"
                           value={plusOneFirstName}
@@ -637,7 +697,7 @@ export default function RSVPPage() {
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Guest&apos;s Last Name (optional)</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Guest&apos;s Last Name *</label>
                         <input
                           type="text"
                           value={plusOneLastName}
