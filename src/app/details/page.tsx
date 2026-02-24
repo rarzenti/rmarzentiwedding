@@ -297,7 +297,7 @@ export default function DetailsPage() {
             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
               <h3 className="font-playfair text-xl font-light text-gray-800 mb-3 tracking-wide">Church Parking Lot</h3>
               <p className="text-gray-700 font-light leading-relaxed">
-                A parking lot is located on 37th Street, directly across from the church entrance, and will be available for guests.
+                A small parking lot is located on 37th Street, directly across from the church entrance, and will be available for guests.
               </p>
             </div>
             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">

@@ -139,10 +139,10 @@ export default function AdminDashboard() {
         tableNumber: m.tableNumber === "" ? undefined : Number(m.tableNumber),
         isChild: !!m.isChild,
       }))
-      .filter((m) => m.firstName && m.lastName);
+      .filter((m) => m.firstName);
 
     if (cleaned.length === 0) {
-      alert("Please enter at least one guest with first and last name.");
+      alert("Please enter at least one guest with a first name.");
       return;
     }
 
@@ -898,7 +898,7 @@ function AddGuestModal({ onAdd, onClose }: {
   const handleSubmit = () => {
     const fn = firstName.trim();
     const ln = lastName.trim();
-    if (!fn || !ln) return;
+    if (!fn) return;
     onAdd({ 
       title: title || undefined, 
       firstName: fn, 
@@ -950,7 +950,7 @@ function AddGuestModal({ onAdd, onClose }: {
 
           <div className="grid grid-cols-4 gap-2">
             <div className="col-span-3">
-              <label className="block text-xs font-medium text-gray-600 mb-1">Last Name *</label>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Last Name</label>
               <input 
                 value={lastName} 
                 onChange={(e) => setLastName(e.target.value)} 
@@ -1013,7 +1013,7 @@ function AddGuestModal({ onAdd, onClose }: {
           <button
             type="button"
             onClick={handleSubmit}
-            disabled={!firstName.trim() || !lastName.trim()}
+            disabled={!firstName.trim()}
             className="flex-1 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Add Guest

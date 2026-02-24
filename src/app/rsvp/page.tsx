@@ -111,8 +111,8 @@ export default function RSVPPage() {
   
   // Handle accepting the +1 and saving the name
   const handlePlusOneAccept = async () => {
-    if (!plusOneFirstName.trim() || !plusOneLastName.trim()) {
-      alert("Please enter both first and last name for your guest.");
+    if (!plusOneFirstName.trim()) {
+      alert("Please enter a first name for your guest.");
       return;
     }
     
@@ -277,7 +277,7 @@ export default function RSVPPage() {
     <main className="mx-auto max-w-3xl px-6 py-4">
       <div className="text-center mb-8">
         <h1 className="font-playfair text-5xl text-black">RSVP</h1>
-        <p className="text-gray-600 text-lg mt-2">Kindly reply by April 6th</p>
+        <p className="text-gray-600 text-lg mt-2">Kindly reply by Monday, April 6th</p>
       </div>
 
         {!selected ? (
@@ -637,7 +637,7 @@ export default function RSVPPage() {
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Guest&apos;s Last Name</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Guest&apos;s Last Name (optional)</label>
                         <input
                           type="text"
                           value={plusOneLastName}

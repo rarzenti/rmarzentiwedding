@@ -25,8 +25,8 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { title, firstName, lastName, tableNumber, groupId, groupName, createOwnGroup, isChild, foodSelection, suffix, guestOf } = body ?? {};
 
-    if (!firstName || !lastName) {
-      return NextResponse.json({ error: "firstName and lastName are required" }, { status: 400 });
+    if (!firstName) {
+      return NextResponse.json({ error: "firstName is required" }, { status: 400 });
     }
 
     let finalGroupId: string | undefined = undefined;
@@ -41,7 +41,7 @@ export async function POST(req: Request) {
         finalGroupId = createdGroup.id;
       }
     } else if (createOwnGroup) {
-      const createdGroup = await prisma.group.create({ data: { name: `${firstName} ${lastName}` } });
+      const createdGroup = await prisma.group.create({ data: { name: lastName ? `${firstName} ${lastName}` : firstName } });
       finalGroupId = createdGroup.id;
     }
 
@@ -49,7 +49,7 @@ export async function POST(req: Request) {
       data: {
         title: title ? String(title).trim() : null,
         firstName: String(firstName).trim(),
-        lastName: String(lastName).trim(),
+        lastName: lastName ? String(lastName).trim() : "",
         tableNumber: typeof tableNumber === "number" ? tableNumber : tableNumber ? Number(tableNumber) : null,
         isChild: Boolean(isChild) || false,
         foodSelection: typeof foodSelection === "string" && foodSelection.trim() !== "" ? String(foodSelection) : (isChild ? KIDS_MEAL_VALUE : null),
