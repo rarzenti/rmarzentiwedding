@@ -11,6 +11,8 @@ interface GroupItem {
     firstName: string;
     lastName: string;
     tableNumber?: number | null;
+    rsvpStatus: string;
+    guestOf?: string | null;
   }[];
 }
 
@@ -29,6 +31,8 @@ export default function SeatingPlannerPage() {
 
   // Search state for Unseated Groups
   const [unseatedSearch, setUnseatedSearch] = useState("");
+  // Filter by whose guest (All / Ryan / Marsha)
+  const [guestOfFilter, setGuestOfFilter] = useState<"ALL" | "RYAN" | "MARSHA">("ALL");
 
   const loadGroups = async () => {
     try {
@@ -65,9 +69,20 @@ export default function SeatingPlannerPage() {
     return counts;
   }, [groups, tableCount]);
 
-  // Compute filtered unseated groups based on search
+  // Compute filtered unseated groups based on search, RSVP status, and guestOf
   const unseatedGroups = useMemo(() => {
-    const base = groups.filter((g) => g.guests.some((m) => !m.tableNumber));
+    // Only include confirmed (YES) guests, filtered by guestOf
+    const base = groups
+      .map((g) => ({
+        ...g,
+        guests: g.guests.filter((m) => {
+          if (m.rsvpStatus !== "YES") return false;
+          if (guestOfFilter !== "ALL" && m.guestOf !== guestOfFilter) return false;
+          return true;
+        }),
+      }))
+      .filter((g) => g.guests.some((m) => !m.tableNumber));
+
     const q = unseatedSearch.trim().toLowerCase();
     let filtered = base;
     if (q) {
@@ -85,19 +100,19 @@ export default function SeatingPlannerPage() {
         return nameHit || memberHit;
       });
     }
-    
+
     // Sort alphabetically by first guest's last name, then first name
     return filtered.sort((a, b) => {
       const firstA = a.guests[0];
       const firstB = b.guests[0];
       if (!firstA || !firstB) return 0;
-      
+
       const lastNameCompare = firstA.lastName.toLowerCase().localeCompare(firstB.lastName.toLowerCase());
       if (lastNameCompare !== 0) return lastNameCompare;
-      
+
       return firstA.firstName.toLowerCase().localeCompare(firstB.firstName.toLowerCase());
     });
-  }, [groups, unseatedSearch]);
+  }, [groups, unseatedSearch, guestOfFilter]);
 
   const assignGroupToTable = async (groupId: string, table: number | null) => {
     try {
@@ -116,9 +131,9 @@ export default function SeatingPlannerPage() {
   };
 
   // Helper to seat only unseated members of a group at a table
-  const seatUnseatedInGroup = async (groupId: string, table: number) => {
-    const grp = groups.find((g) => g.id === groupId);
-    const ids = grp ? grp.guests.filter((m) => !m.tableNumber).map((m) => m.id) : [];
+  // overrideIds allows passing pre-filtered guest IDs (e.g. confirmed + guestOf-filtered)
+  const seatUnseatedInGroup = async (groupId: string, table: number, overrideIds?: string[]) => {
+    const ids = overrideIds ?? (groups.find((g) => g.id === groupId)?.guests.filter((m) => !m.tableNumber).map((m) => m.id) ?? []);
     if (ids.length === 0) return;
     try {
       const res = await fetch("/api/seating", {
@@ -285,6 +300,23 @@ export default function SeatingPlannerPage() {
             {/* Unseated panel */}
             <div className="border-2 border-emerald-300 rounded-xl bg-white/90 backdrop-blur-sm p-4 shadow-sm" role="region" aria-labelledby="unseated-heading">
               <h3 id="unseated-heading" className="font-medium text-black mb-2">Unseated Groups</h3>
+              {/* Guest-of filter */}
+              <div className="mb-2 inline-flex overflow-hidden rounded-lg border border-gray-300">
+                {(["ALL", "RYAN", "MARSHA"] as const).map((val) => (
+                  <button
+                    key={val}
+                    onClick={() => setGuestOfFilter(val)}
+                    className={`px-3 py-1 text-xs font-medium ${
+                      guestOfFilter === val
+                        ? "bg-black text-white"
+                        : "bg-white text-black hover:bg-gray-100"
+                    }`}
+                    aria-pressed={guestOfFilter === val}
+                  >
+                    {val === "ALL" ? "All" : val === "RYAN" ? "Ryan's" : "Marsha's"}
+                  </button>
+                ))}
+              </div>
               {/* Search input for unseated list */}
               <div className="mb-2">
                 <input
@@ -308,7 +340,7 @@ export default function SeatingPlannerPage() {
                         <div className="flex items-center gap-2">
                           <button
                             className="inline-flex h-9 w-9 items-center justify-center rounded border-2 border-green-600 text-green-600 bg-white hover:bg-green-600 hover:text-white focus:outline-none focus:ring-2 focus:ring-green-300"
-                            onClick={() => seatUnseatedInGroup(g.id, selectedTable)}
+                            onClick={() => seatUnseatedInGroup(g.id, selectedTable, g.guests.filter((m) => !m.tableNumber).map((m) => m.id))}
                             disabled={tablesFilled[selectedTable] + unseatedCount > CAPACITY}
                             aria-label={`Add to Table ${selectedTable}`}
                             title={`Add to Table ${selectedTable}`}
