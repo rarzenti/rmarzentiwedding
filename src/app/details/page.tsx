@@ -146,7 +146,7 @@ export default function DetailsPage() {
               <div className="w-16 h-0.5 bg-gradient-to-r from-transparent via-blue-400 to-transparent mx-auto mb-4"></div>
               <p className="text-blue-800 font-light leading-relaxed max-w-2xl">
                 Please note that you will need to arrange transportation to and from the ceremony to the reception venue (hotel). 
-                The drive is approximately 30 minutes. <br /> Uber and Lyft services are widely available.
+                The drive is approximately 30 minutes. <br /> Uber and Lyft services are widely available. <br /> <strong className="text-red-600">We strongly recommend ordering your Uber or Lyft no later than 1PM.</strong>
               </p>
             </div>
           </div>
