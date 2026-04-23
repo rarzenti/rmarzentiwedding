@@ -133,20 +133,36 @@ export default function DetailsPage() {
       {/* Transportation Note */}
       <div className="mb-20">
         <div className="bg-gradient-to-br from-blue-50 to-white p-10 rounded-2xl shadow-lg border border-blue-100">
-          <div className="flex items-start justify-center">
-            <div className="flex-shrink-0 mr-4">
-              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                <svg className="h-6 w-6 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                </svg>
+          <div className="text-center mb-8">
+            <h2 className="font-playfair text-4xl font-light text-blue-900 mb-4 tracking-wide">Transportation Between Venues</h2>
+            <div className="w-20 h-0.5 bg-gradient-to-r from-transparent via-blue-400 to-transparent mx-auto"></div>
+          </div>
+          <div className="max-w-2xl mx-auto space-y-6">
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-blue-100">
+              <h3 className="font-playfair text-xl font-light text-blue-900 mb-3 tracking-wide">🚌 Shuttle Service</h3>
+              <p className="text-blue-800 font-light leading-relaxed mb-4">
+                We have arranged a shuttle to transport guests staying at the Hilton Garden Inn to and from the ceremony.
+              </p>
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div className="bg-blue-50 p-4 rounded-lg text-center">
+                  <p className="text-xs text-blue-600 font-light uppercase tracking-widest mb-1">Departs Hotel</p>
+                  <p className="font-playfair text-xl font-light text-blue-900">1:05 PM</p>
+                  <p className="text-xs text-blue-700 font-light italic mt-1">Hilton Garden Inn → Church</p>
+                </div>
+                <div className="bg-blue-50 p-4 rounded-lg text-center">
+                  <p className="text-xs text-blue-600 font-light uppercase tracking-widest mb-1">Departs Church</p>
+                  <p className="font-playfair text-xl font-light text-blue-900">3:30 PM</p>
+                  <p className="text-xs text-blue-700 font-light italic mt-1">Church → Hilton Garden Inn</p>
+                </div>
               </div>
+              <p className="text-blue-700 font-light text-sm italic text-center">
+                <strong className="not-italic">Please note:</strong> The shuttle will prioritize guests staying at the hotel Friday night & seats may be limited. The shuttle departs promptly — please plan accordingly!
+              </p>
             </div>
-            <div className="text-center">
-              <h3 className="font-playfair text-2xl font-light text-blue-900 mb-4 tracking-wide">Transportation Between Venues</h3>
-              <div className="w-16 h-0.5 bg-gradient-to-r from-transparent via-blue-400 to-transparent mx-auto mb-4"></div>
-              <p className="text-blue-800 font-light leading-relaxed max-w-2xl">
-                Please note that you will need to arrange transportation to and from the ceremony to the reception venue (hotel). 
-                The drive is approximately 30 minutes. <br /> Uber and Lyft services are widely available. <br /> <strong className="text-red-600">We strongly recommend ordering your Uber or Lyft no later than 1PM.</strong>
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-blue-100">
+              <h3 className="font-playfair text-xl font-light text-blue-900 mb-3 tracking-wide">Not Staying at the Hotel?</h3>
+              <p className="text-blue-800 font-light leading-relaxed">
+                Uber and Lyft services are widely available. The drive is approximately 30 minutes. Please plan to arrive at the church by <strong>1:45 PM</strong> to ensure a prompt start to the ceremony.
               </p>
             </div>
           </div>
