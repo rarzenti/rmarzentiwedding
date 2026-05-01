@@ -1036,25 +1036,6 @@ function SVGFloorPlan({
           const label = labelFor(n);
           const dup = isDuplicateLabel(n);
 
-          // Chair stubs around the table — fill in one per occupant, leave empties for the rest.
-          const chairs = Array.from({ length: capacity }).map((_, i) => {
-            const a = (i * Math.PI * 2) / capacity - Math.PI / 2;
-            const cx = x + Math.cos(a) * (tableR + 7);
-            const cy = y + Math.sin(a) * (tableR + 7);
-            const occupied = i < count;
-            return (
-              <circle
-                key={i}
-                cx={cx}
-                cy={cy}
-                r={4.5}
-                fill={occupied ? "#2563eb" : "#f9fafb"}
-                stroke={occupied ? "#1d4ed8" : "#9ca3af"}
-                strokeWidth={0.8}
-              />
-            );
-          });
-
           // Decide table fill/stroke. Duplicate labels take priority over selection.
           const fill = dup
             ? "#fee2e2"
@@ -1083,7 +1064,6 @@ function SVGFloorPlan({
               className={isLargeScreen ? "cursor-grab active:cursor-grabbing" : "cursor-pointer"}
               style={{ touchAction: "none" }}
             >
-              {chairs}
               <circle cx={x} cy={y} r={tableR} fill={fill} stroke={stroke} strokeWidth={strokeWidth} />
               <text x={x} y={y - 2} textAnchor="middle" className={dup ? "fill-red-700 pointer-events-none" : "fill-black pointer-events-none"} style={{ fontSize: 14, fontWeight: 700 }}>{label}</text>
               <text x={x} y={y + 13} textAnchor="middle" className="fill-gray-700 pointer-events-none" style={{ fontSize: 10 }}>{`${count}/${capacity}`}</text>

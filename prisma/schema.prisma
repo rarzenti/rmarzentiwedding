@@ -59,9 +59,21 @@ model Guest {
 }
 
 model Table {
-  id       String  @id @default(cuid())
-  number   Int     @unique
-  nickname String?
+  id            String  @id @default(cuid())
+  number        Int     @unique
+  nickname      String?
+  // User-assigned label (the number printed on place cards). Falls back to `number` when null.
+  displayNumber Int?
+  // Position on the floor diagram, normalized 0-1 against the SVG viewBox. Null = use default layout.
+  posX          Float?
+  posY          Float?
+}
+
+// Generic key/value settings store (used today for `tableCount` and a one-shot
+// floor-layout migration flag).
+model Setting {
+  key   String @id
+  value String
 }
 
 model Nickname {
