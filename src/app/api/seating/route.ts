@@ -21,8 +21,8 @@ export async function POST(req: Request) {
     let targetTable: number | null = null;
     if (tableNumber !== null && tableNumber !== undefined) {
       const t = Number(tableNumber);
-      if (!Number.isInteger(t) || t < 1 || t > 20) {
-        return NextResponse.json({ error: "tableNumber must be between 1 and 20" }, { status: 400 });
+      if (!Number.isInteger(t) || t < 1 || t > 99) {
+        return NextResponse.json({ error: "tableNumber must be between 1 and 99" }, { status: 400 });
       }
       targetTable = t;
     }
