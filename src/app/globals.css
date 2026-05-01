@@ -176,6 +176,17 @@ button {
   opacity: 1;
 }
 
+.seating-lookup-input {
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
+  background-color: #ffffff !important;
+}
+
+.seating-lookup-input::placeholder {
+  color: rgba(6, 95, 70, 0.7) !important;
+  -webkit-text-fill-color: rgba(6, 95, 70, 0.7) !important;
+}
+
 /* ============================================
    HIGH CONTRAST PAGE TITLES
    ============================================ */
