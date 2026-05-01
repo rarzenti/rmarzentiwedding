@@ -34,13 +34,19 @@ function MealsPageInner() {
   const [guests, setGuests] = useState<Guest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // selectedTable holds a slot number (as a string) when a specific table is
+  // chosen, or one of the special tokens "ALL" / "UNASSIGNED".
   const [selectedTable, setSelectedTable] = useState<string>("ALL");
+  // modalTable holds a slot number (or "UNASSIGNED") — not the displayed label.
   const [modalTable, setModalTable] = useState<number | "UNASSIGNED" | null>(null);
   const params = useSearchParams();
   const router = useRouter();
   const view = (params.get("view") as "orders" | "allergies" | null) || "orders";
   const [tableNicknames, setTableNicknames] = useState<Record<number, string | null>>({});
-  const [tableCount, setTableCount] = useState<number>(20);
+  const [tableCount, setTableCount] = useState<number>(22);
+  // Per-slot user-assigned table number (the label printed on place cards). A
+  // missing entry means "use the slot number as the label".
+  const [tableLabels, setTableLabels] = useState<Record<number, number>>({});
 
   const loadGuests = async () => {
     try {
@@ -68,7 +74,24 @@ function MealsPageInner() {
     } catch {}
   };
 
-  useEffect(() => { loadGuests(); loadTables(); }, []);
+  const loadLayout = async () => {
+    try {
+      const res = await fetch("/api/floor-layout", { cache: "no-store" });
+      const data = await res.json();
+      if (!res.ok) return;
+      if (data.tableCount) setTableCount(data.tableCount);
+      if (data.labels) {
+        const parsed: Record<number, number> = {};
+        for (const [k, v] of Object.entries(data.labels as Record<string, number>)) {
+          const slot = Number(k);
+          if (Number.isInteger(slot) && Number.isInteger(v)) parsed[slot] = v as number;
+        }
+        setTableLabels(parsed);
+      }
+    } catch {}
+  };
+
+  useEffect(() => { loadGuests(); loadTables(); loadLayout(); }, []);
 
   const confirmed = useMemo(() => guests.filter(g => g.rsvpStatus === "YES"), [guests]);
   const pending = useMemo(() => guests.filter(g => g.rsvpStatus === "PENDING"), [guests]);
@@ -82,12 +105,23 @@ function MealsPageInner() {
     return counts;
   }, [confirmed]);
 
+  // One row per slot (physical position on the floor diagram). Each row carries
+  // the user-assigned label (= guest.tableNumber) and the guests whose
+  // tableNumber matches that label. In a duplicate-label state the same guests
+  // intentionally appear under each conflicting slot — that surfaces the
+  // conflict in the meals view too.
   const tables = useMemo(() => {
-    const map = new Map<number, Guest[]>();
-    for (let i = 1; i <= tableCount; i++) map.set(i, []);
-    confirmed.forEach(g => { if (g.tableNumber && map.has(g.tableNumber)) map.get(g.tableNumber)!.push(g); });
-    return Array.from(map.entries());
-  }, [confirmed, tableCount]);
+    const guestsByLabel: Record<number, Guest[]> = {};
+    confirmed.forEach(g => {
+      if (g.tableNumber == null) return;
+      (guestsByLabel[g.tableNumber] ||= []).push(g);
+    });
+    return Array.from({ length: tableCount }, (_, i) => {
+      const slot = i + 1;
+      const label = tableLabels[slot] ?? slot;
+      return { slot, label, guests: guestsByLabel[label] ?? [] };
+    });
+  }, [confirmed, tableCount, tableLabels]);
 
   const unassigned = useMemo(() => confirmed.filter(g => !g.tableNumber), [confirmed]);
 
@@ -105,8 +139,8 @@ function MealsPageInner() {
   const filteredTables = useMemo(() => {
     if (selectedTable === "ALL") return tables;
     if (selectedTable === "UNASSIGNED") return [];
-    const num = Number(selectedTable);
-    return tables.filter(([t]) => t === num);
+    const slot = Number(selectedTable);
+    return tables.filter(t => t.slot === slot);
   }, [tables, selectedTable]);
 
   const openTableModal = (tableId: number | "UNASSIGNED") => {
@@ -117,16 +151,18 @@ function MealsPageInner() {
   const modalGuests = useMemo(() => {
     if (modalTable === null) return [];
     if (modalTable === "UNASSIGNED") return unassigned;
-    const entry = tables.find(([t]) => t === modalTable);
-    return entry ? entry[1] : [];
+    const entry = tables.find(t => t.slot === modalTable);
+    return entry ? entry.guests : [];
   }, [modalTable, tables, unassigned]);
+
+  const modalLabel = typeof modalTable === "number" ? (tableLabels[modalTable] ?? modalTable) : null;
 
   const guestsWithAllergies = useMemo(() => confirmed.filter(g => (g.dietaryRestrictions||"").trim().length>0), [confirmed]);
 
   const exportOrders = () => {
-    const data: Array<{ Table: string | number } & Record<MealKey, number>> = tables.map(([table, list]) => {
-      const counts = tableMealBreakdown(list);
-      return { Table: table, ...counts };
+    const data: Array<{ Table: string | number } & Record<MealKey, number>> = tables.map(t => {
+      const counts = tableMealBreakdown(t.guests);
+      return { Table: t.label, ...counts };
     });
     if (unassigned.length) {
       const counts = tableMealBreakdown(unassigned);
@@ -199,7 +235,11 @@ function MealsPageInner() {
                 >
                   <option value="ALL">All Tables ({tableCount + 1})</option>
                   <option value="UNASSIGNED">Unassigned</option>
-                  {tables.map(([t]) => <option key={t} value={t}>{`Table ${t}`}</option>)}
+                  {tables.map(t => (
+                    <option key={t.slot} value={t.slot}>
+                      {`Table ${t.label}${t.label !== t.slot ? ` (slot ${t.slot})` : ""}`}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div className="flex items-center gap-2">
@@ -235,16 +275,16 @@ function MealsPageInner() {
                   hasDietary={tableHasDietary(unassigned)}
                 />
               )}
-              {filteredTables.map(([t, list]) => (
+              {filteredTables.map(t => (
                 <TableCard
-                  key={t}
-                  label={`Table ${t}`}
-                  nickname={tableNicknames[t] || null}
-                  guests={list}
+                  key={t.slot}
+                  label={`Table ${t.label}`}
+                  nickname={tableNicknames[t.slot] || null}
+                  guests={t.guests}
                   mealKeys={mealKeys}
                   tableMealBreakdown={tableMealBreakdown}
-                  onOpen={() => openTableModal(t)}
-                  hasDietary={tableHasDietary(list)}
+                  onOpen={() => openTableModal(t.slot)}
+                  hasDietary={tableHasDietary(t.guests)}
                 />
               ))}
             </div>
@@ -286,7 +326,7 @@ function MealsPageInner() {
           <div className="absolute inset-0 bg-black/40" onClick={closeModal} />
           <div className="relative bg-white rounded-xl shadow-xl max-w-lg w-full p-6 z-10">
             <div className="flex items-start justify-between mb-4">
-              <h2 className="font-playfair text-xl text-emerald-900">{modalTable==="UNASSIGNED"?"Unassigned Guests":`Table ${modalTable}`}</h2>
+              <h2 className="font-playfair text-xl text-emerald-900">{modalTable==="UNASSIGNED"?"Unassigned Guests":`Table ${modalLabel}`}</h2>
               <button onClick={closeModal} className="text-gray-500 hover:text-gray-700">✕</button>
             </div>
             <div className="mb-4 grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -345,8 +385,8 @@ function TableCard({ label, nickname, guests, onOpen, hasDietary, mealKeys, tabl
   return (
     <button onClick={onOpen} className={`relative group text-left rounded-xl border bg-white/95 backdrop-blur-sm p-6 hover:shadow-lg transition min-h-[230px] flex flex-col ${special? 'ring-1 ring-amber-300' : 'border-emerald-100'}`}>
       <div className="mb-4 pr-20">
-        <div className="font-playfair text-2xl text-emerald-900 leading-tight whitespace-nowrap">{nickname ? nickname : label}</div>
-        {nickname && <div className="text-[11px] text-emerald-600 font-cormorant tracking-wide whitespace-nowrap">{label}</div>}
+        <div className="font-playfair text-2xl text-emerald-900 leading-tight whitespace-nowrap">{label}</div>
+        {nickname && <div className="text-[11px] text-emerald-600 font-cormorant tracking-wide whitespace-nowrap">{nickname}</div>}
       </div>
       {hasDietary && (
         <span className="absolute -top-2 -right-2 inline-flex items-center gap-1 bg-amber-600 text-white text-[11px] px-2 py-1 rounded-full shadow-lg">⚠ Dietary</span>

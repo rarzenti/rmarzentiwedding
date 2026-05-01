@@ -1,17 +1,18 @@
 import { NextResponse } from "next/server";
 import { prisma } from "../../../lib/prisma";
-import { promises as fs } from "fs";
-import path from "path";
 
-// Helper to get tableCount from floor-layout.json
+// Read tableCount from the Setting table (the new source of truth — the
+// on-disk floor-layout.json is unwritable in production on Vercel).
 async function getTableCount(): Promise<number> {
   try {
-    const layoutPath = path.join(process.cwd(), "floor-layout.json");
-    const data = await fs.readFile(layoutPath, "utf-8");
-    const parsed = JSON.parse(data);
-    return parsed.tableCount || 20;
+    const setting = await prisma.setting.findUnique({ where: { key: "tableCount" } });
+    if (setting) {
+      const n = Number(setting.value);
+      if (Number.isInteger(n) && n >= 1) return n;
+    }
+    return 22;
   } catch {
-    return 20; // Default if file doesn't exist
+    return 22;
   }
 }
 
