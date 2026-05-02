@@ -46,17 +46,19 @@ export async function GET(req: Request) {
   try {
     const tokens = q.replace(/[.,]/g, " ").split(/\s+/).filter(Boolean);
 
-    let guests: Array<{ id: string; firstName: string; lastName: string; tableNumber: number | null; foodSelection: string | null }>;
+    let guests: Array<{ id: string; firstName: string; lastName: string; suffix: string | null; tableNumber: number | null; foodSelection: string | null }>;
 
     const seatedFilter = { tableNumber: { not: null } };
 
     if (tokens.length >= 2) {
       const firstPiece = tokens[0];
       const lastPiece = tokens[tokens.length - 1];
+      const possibleLastName = tokens[1];
       const firstAliases = aliasSet(firstPiece);
       const lastAliases = aliasSet(lastPiece);
       const firstOR = firstAliases.map((a) => ({ firstName: { equals: a, mode: "insensitive" as const } }));
       const reversedFirstOR = lastAliases.map((a) => ({ firstName: { equals: a, mode: "insensitive" as const } }));
+      const suffixFilter = { suffix: { contains: lastPiece, mode: "insensitive" as const } };
 
       guests = await prisma.guest.findMany({
         where: {
@@ -64,13 +66,17 @@ export async function GET(req: Request) {
             seatedFilter,
             {
               OR: [
-                { AND: [{ OR: firstOR }, { lastName: { equals: lastPiece, mode: "insensitive" } }] },
-                { AND: [{ OR: reversedFirstOR }, { lastName: { equals: firstPiece, mode: "insensitive" } }] },
+                { AND: [{ OR: firstOR }, { lastName: { startsWith: lastPiece, mode: "insensitive" } }] },
+                { AND: [{ OR: reversedFirstOR }, { lastName: { startsWith: firstPiece, mode: "insensitive" } }] },
+                { AND: [{ OR: firstOR }, suffixFilter] },
+                ...(tokens.length >= 3
+                  ? [{ AND: [{ OR: firstOR }, { lastName: { startsWith: possibleLastName, mode: "insensitive" as const } }, suffixFilter] }]
+                  : []),
               ],
             },
           ],
         },
-        select: { id: true, firstName: true, lastName: true, tableNumber: true, foodSelection: true },
+        select: { id: true, firstName: true, lastName: true, suffix: true, tableNumber: true, foodSelection: true },
         take: 50,
       });
     } else {
@@ -84,11 +90,12 @@ export async function GET(req: Request) {
                 { firstName: { contains: q, mode: "insensitive" } },
                 ...aliases.map((alias) => ({ firstName: { equals: alias, mode: "insensitive" as const } })),
                 { lastName: { contains: q, mode: "insensitive" } },
+                { suffix: { contains: q, mode: "insensitive" } },
               ],
             },
           ],
         },
-        select: { id: true, firstName: true, lastName: true, tableNumber: true, foodSelection: true },
+        select: { id: true, firstName: true, lastName: true, suffix: true, tableNumber: true, foodSelection: true },
         take: 50,
       });
     }
@@ -97,16 +104,16 @@ export async function GET(req: Request) {
     const tableNumbers = Array.from(
       new Set(guests.map((g) => g.tableNumber).filter((t): t is number => t != null))
     );
-    const tablematesByTable: Record<number, { firstName: string; lastName: string }[]> = {};
+    const tablematesByTable: Record<number, { firstName: string; lastName: string; suffix: string | null }[]> = {};
     if (tableNumbers.length > 0) {
       const all = await prisma.guest.findMany({
         where: { tableNumber: { in: tableNumbers } },
-        select: { firstName: true, lastName: true, tableNumber: true },
+        select: { firstName: true, lastName: true, suffix: true, tableNumber: true },
         orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
       });
       for (const m of all) {
         if (m.tableNumber == null) continue;
-        (tablematesByTable[m.tableNumber] ||= []).push({ firstName: m.firstName, lastName: m.lastName });
+        (tablematesByTable[m.tableNumber] ||= []).push({ firstName: m.firstName, lastName: m.lastName, suffix: m.suffix });
       }
     }
 
@@ -116,10 +123,11 @@ export async function GET(req: Request) {
         id: g.id,
         firstName: g.firstName,
         lastName: g.lastName,
+        suffix: g.suffix,
         tableNumber: g.tableNumber,
         foodSelection: g.foodSelection,
         tablemates: (tablematesByTable[g.tableNumber] || []).filter(
-          (t) => !(t.firstName === g.firstName && t.lastName === g.lastName)
+          (t) => !(t.firstName === g.firstName && t.lastName === g.lastName && t.suffix === g.suffix)
         ),
       }));
 

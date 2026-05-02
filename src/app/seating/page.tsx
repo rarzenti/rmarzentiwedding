@@ -6,11 +6,13 @@ import { getMealInfo } from "@/lib/config";
 interface Tablemate {
   firstName: string;
   lastName: string;
+  suffix: string | null;
 }
 interface Match {
   id: string;
   firstName: string;
   lastName: string;
+  suffix: string | null;
   tableNumber: number;
   foodSelection: string | null;
   tablemates: Tablemate[];
@@ -116,6 +118,8 @@ export default function PublicSeatingPage() {
   };
 
   const selectedMeal = selected ? getMealInfo(selected.foodSelection) : null;
+  const displayName = (person: { firstName: string; lastName: string; suffix?: string | null }) =>
+    `${person.firstName} ${person.lastName}${person.suffix ? ` ${person.suffix}` : ""}`;
 
   return (
     <main className="min-h-[calc(100vh-4rem)] px-4 py-8 sm:px-6">
@@ -164,7 +168,7 @@ export default function PublicSeatingPage() {
                       className="w-full rounded-2xl border-2 border-emerald-200 bg-white p-4 text-left shadow-sm hover:bg-emerald-50 active:bg-emerald-100 transition"
                     >
                       <div className="font-playfair text-lg text-emerald-900">
-                        {m.firstName} {m.lastName}
+                        {displayName(m)}
                       </div>
                       <div className="text-sm font-cormorant text-emerald-700">Table {m.tableNumber}</div>
                     </button>
@@ -185,7 +189,7 @@ export default function PublicSeatingPage() {
             <div className="overflow-hidden rounded-lg border border-rose-200 bg-gradient-to-br from-white via-rose-50/70 to-emerald-50/80 shadow-[0_18px_45px_rgba(15,23,42,0.08)]">
               <div className="px-6 pb-6 pt-7 text-center">
                 <p className="font-cormorant text-lg text-emerald-800">
-                  Welcome, {selected.firstName} {selected.lastName}
+                  Welcome, {displayName(selected)}
                 </p>
                 <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-[#9f5772]">
                   Your Reception Table
@@ -247,7 +251,7 @@ export default function PublicSeatingPage() {
                 <ul className="grid gap-2 font-cormorant text-emerald-900">
                   {selected.tablemates.map((t, i) => (
                     <li key={i} className="rounded-md border border-emerald-100 bg-emerald-50/60 px-3 py-2 text-lg leading-tight">
-                      {t.firstName} {t.lastName}
+                      {displayName(t)}
                     </li>
                   ))}
                 </ul>
